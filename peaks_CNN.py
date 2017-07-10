@@ -5,29 +5,17 @@ from __future__ import print_function
 import argparse
 import sys
 
-from tensorflow.examples.tutorials.mnist import input_data
-
 import tensorflow as tf
+import numpy as np
+import scipy.io
+import sklearn as skl
 
 FLAGS = None
 
 def deepnn(x):
-  """deepnn builds the graph for a deep net for classifying digits.
 
-  Args:
-    x: an input tensor with the dimensions (N_examples, 784), where 784 is the
-    number of pixels in a standard MNIST image.
-
-  Returns:
-    A tuple (y, keep_prob). y is a tensor of shape (N_examples, 10), with values
-    equal to the logits of classifying the digit into one of 10 classes (the
-    digits 0-9). keep_prob is a scalar placeholder for the probability of
-    dropout.
-  """
   # Reshape to use within a convolutional neural net.
-  # Last dimension is for "features" - there is only one here, since images are
-  # grayscale -- it would be 3 for an RGB image, 4 for RGBA, etc.
-  x_image = tf.reshape(x, [-1, 28, 28, 1])
+  x_peaks = tf.reshape(x,[-1,4,251,1])
 
   # First convolutional layer - maps one grayscale image to 32 feature maps.
   W_conv1 = weight_variable([5, 5, 1, 32])
@@ -90,14 +78,27 @@ def bias_variable(shape):
 
 
 def main(_):
+
   # Import data
-  mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)
+  peaksBin = scipy.io.loadmat('peaksBin.mat')
+  X = peaksBin['seq']
+  y = peaksBin['labels']
+  X, y = skl.utils.shuffle(X,y)
+
+  X_train = X[1:43138,:]
+  y_train = y[1:43138]
+
+  X_valid = X[43138:53138,:]
+  y_valid = y[43138:53138]
+
+  X_test = X[53138:63138,:]
+  y_test = y[53138:63138]
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 784])
+  x = tf.placeholder(tf.int8, [None, 1004])
 
   # Define loss and optimizer
-  y_ = tf.placeholder(tf.float32, [None, 10])
+  y_ = tf.placeholder(tf.int8, [None, 1])
 
   # Build the graph for the deep net
   y_conv, keep_prob = deepnn(x)
@@ -111,7 +112,7 @@ def main(_):
   with tf.Session() as sess:
     sess.run(tf.global_variables_initializer())
     for i in range(20000):
-      batch = mnist.train.next_batch(50)
+      batch = next_training_batch(50)
       if i % 100 == 0:
         train_accuracy = accuracy.eval(feed_dict={
             x: batch[0], y_: batch[1], keep_prob: 1.0})
@@ -119,12 +120,7 @@ def main(_):
       train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
     print('test accuracy %g' % accuracy.eval(feed_dict={
-        x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))
+        x: , y_: mnist.test.labels, keep_prob: 1.0}))
 
 if __name__ == '__main__':
-  parser = argparse.ArgumentParser()
-  parser.add_argument('--data_dir', type=str,
-                      default='/tmp/tensorflow/mnist/input_data',
-                      help='Directory for storing input data')
-  FLAGS, unparsed = parser.parse_known_args()
-  tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+  tf.app.run(main=main, argv=[sys.argv[0]])
