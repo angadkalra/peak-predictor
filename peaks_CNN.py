@@ -77,9 +77,6 @@ def bias_variable(shape):
 def next_training_batch(X,y,size):
     """next_training_batch generates a batch of random training examples."""
     x_batch = X[np.random.choice(X.shape[0], size, False), :]
-    x_batch = np.asarray(x_batch.todense())
-    x_batch = x_batch.astype(int)
-
     y_batch = y[np.random.choice(y.shape[0], size, False)]
 
     return (x_batch, y_batch)
@@ -90,6 +87,8 @@ def main(_):
     X = peaksBin['seq']
     y = peaksBin['labels']
     X, y = skl.utils.shuffle(X, y)
+
+    X = np.asarray(X.todense()).astype(int)
 
     X_train = X[1:43138, :]
     y_train = y[1:43138]
