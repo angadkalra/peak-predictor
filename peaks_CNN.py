@@ -14,8 +14,7 @@ FLAGS = None
 
 def deepnn(x):
     # Reshape to use within a convolutional neural net.
-    x_peaks = tf.sparse_tensor_to_dense(x)
-    x_peaks = tf.reshape(x_peaks, [-1, 4, 251, 1])
+    x_peaks = tf.reshape(x, [-1, 4, 251, 1])
 
     # First convolutional layer
     W_conv1 = weight_variable([2, 2, 1, 32])
@@ -26,26 +25,18 @@ def deepnn(x):
     h_pool1 = max_pool_2x2(h_conv1)
 
     # Second convolutional layer
-    W_conv2 = weight_variable([5, 5, 32, 64])
+    W_conv2 = weight_variable([2, 2, 32, 64])
     b_conv2 = bias_variable([64])
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
     # Second pooling layer.
     h_pool2 = max_pool_2x2(h_conv2)
 
-    # # Third convolutional layer
-    # W_conv3 = weight_variable([9,9,64,128])
-    # b_conv3 = bias_variable([128])
-    # h_conv3 = tf.nn.relu(conv2d(h_pool2,W_conv3) + b_conv3)
-    #
-    # # Third pooling layer
-    # h_pool3 = max_pool_2x2(h_conv3)
-
     # Fully connected layer 1
-    W_fc1 = weight_variable([7*7*64, 1004])
+    W_fc1 = weight_variable([63*64, 1004])
     b_fc1 = bias_variable([1004])
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
+    h_pool2_flat = tf.reshape(h_pool2, [-1, 63*64])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
 
     # Dropout - controls the complexity of the model, prevents co-adaptation of
@@ -86,8 +77,12 @@ def bias_variable(shape):
 def next_training_batch(X,y,size):
     """next_training_batch generates a batch of random training examples."""
     x_batch = X[np.random.choice(X.shape[0], size, False), :]
+    x_batch = np.asarray(x_batch.todense())
+    x_batch = x_batch.astype(int)
+
     y_batch = y[np.random.choice(y.shape[0], size, False)]
-    return {0: x_batch, 1: y_batch}
+
+    return (x_batch, y_batch)
 
 def main(_):
     # Import data
@@ -106,7 +101,7 @@ def main(_):
     y_test = y[53138:]
 
     # Create the model
-    x = tf.sparse_placeholder(tf.float32, [None, 1004])
+    x = tf.placeholder(tf.float32, [None, 1004])
 
     # Define loss and optimizer
     y_ = tf.placeholder(tf.float32, [None, 1])
