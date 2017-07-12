@@ -22,33 +22,47 @@ def deepnn(x):
     h_conv1 = tf.nn.relu(conv2d(x_peaks, W_conv1) + b_conv1)
 
     # Pooling layer
-    h_pool1 = max_pool_2x2(h_conv1)
+    h_pool1 = max_pool(h_conv1, 2, 2)
 
     # Second convolutional layer
-    W_conv2 = weight_variable([2, 2, 32, 64])
+    W_conv2 = weight_variable([2, 4, 32, 64])
     b_conv2 = bias_variable([64])
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
     # Second pooling layer.
-    h_pool2 = max_pool_2x2(h_conv2)
+    h_pool2 = max_pool(h_conv2, 2, 2)
+
+    # Third convolutional layer
+    W_conv3 = weight_variable([1, 6, 64, 128])
+    b_conv3 = bias_variable([128])
+    h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
+
+    # Third pooling layer
+    h_pool3 = max_pool(h_conv3, 1, 2)
 
     # Fully connected layer 1
-    W_fc1 = weight_variable([63*64, 1004])
-    b_fc1 = bias_variable([1004])
+    W_fc1 = weight_variable([32*128, 2048])
+    b_fc1 = bias_variable([2048])
 
-    h_pool2_flat = tf.reshape(h_pool2, [-1, 63*64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+    h_pool3_flat = tf.reshape(h_pool3, [-1, 32*128])
+    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
+
+    # Fully connected layer 2
+    W_fc2 = weight_variable([2048, 1004])
+    b_fc2 = bias_variable([1004])
+
+    h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
 
     # Dropout - controls the complexity of the model, prevents co-adaptation of
     # features.
     keep_prob = tf.placeholder(tf.float32)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
 
-    # Map the 1004 features to 1 class
-    W_fc2 = weight_variable([1004, 1])
-    b_fc2 = bias_variable([1])
+    # Map the ??? features to 1 class
+    W_c3 = weight_variable([1004, 1])
+    b_c3 = bias_variable([1])
 
-    y_conv = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+    y_conv = tf.matmul(h_fc2_drop, W_c3) + b_c3
     return y_conv, keep_prob
 
 
@@ -57,10 +71,10 @@ def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 
-def max_pool_2x2(x):
+def max_pool(x, dim1, dim2):
     """max_pool_2x2 downsamples a feature map by 2X."""
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-                          strides=[1, 2, 2, 1], padding='SAME')
+    return tf.nn.max_pool(x, ksize=[1, dim1, dim2, 1],
+                          strides=[1, dim1, dim2, 1], padding='SAME')
 
 
 def weight_variable(shape):
@@ -86,8 +100,11 @@ def main(_):
     peaksBin = scipy.io.loadmat('peaksBin.mat')
     X = peaksBin['seq']
     y = peaksBin['labels']
+
+    # They are permuted in the same way
     X, y = skl.utils.shuffle(X, y)
 
+    # Want dense numpy ndarray
     X = np.asarray(X.todense()).astype(int)
 
     X_train = X[1:43138, :]
@@ -124,7 +141,7 @@ def main(_):
                 print('step %d, training accuracy %g' % (i, train_accuracy))
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
 
-        print('test accuracy %g' % accuracy.eval(feed_dict={x: X_test, y_: y_test, keep_prob: 1.0}))
+        print('test accuracy %g' % accuracy.eval(feed_dict={x: X_valid, y_: y_valid, keep_prob: 1.0}))
 
 
 if __name__ == '__main__':
