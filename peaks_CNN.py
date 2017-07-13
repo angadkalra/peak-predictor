@@ -49,7 +49,7 @@ def deepnn(x):
 
     # Fully connected layer 2
     W_fc2 = weight_variable([2048, 1024])
-    b_fc2 = bias_variable([1004])
+    b_fc2 = bias_variable([1024])
 
     h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
 
@@ -98,25 +98,20 @@ def next_training_batch(X,y,size):
 
 
 def main(_):
-    # Import data
-    peaksBin = scipy.io.loadmat('peaksBin.mat')
-    X = peaksBin['seq']
-    y = peaksBin['labels']
+    # Import training and validation data
+    peaksBinTrain = scipy.io.loadmat('peaksBinTrain.mat')
+    X_train = peaksBinTrain['seq']
+    y_train = peaksBinTrain['labels']
+
+    peaksBinValid = scipy.io.loadmat('peaksBinValid.mat')
+    X_valid = peaksBinValid['seq']
+    y_valid = peaksBinValid['labels']
 
     # They are permuted in the same way
-    X, y = skl.utils.shuffle(X, y)
+    X_train, y_train = skl.utils.shuffle(X_train, y_train)
 
     # Want dense numpy ndarray
-    X = np.asarray(X.todense()).astype(int)
-
-    X_train = X[1:43138, :]
-    y_train = y[1:43138]
-
-    X_valid = X[43138:53138, :]
-    y_valid = y[43138:53138]
-
-    X_test = X[53138:, :]
-    y_test = y[53138:]
+    X_train = np.asarray(X_train.todense()).astype(int)
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004])
