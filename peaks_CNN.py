@@ -4,7 +4,7 @@ from __future__ import print_function
 
 import sys
 
-import scipy.io
+import scipy.io as sio
 import sklearn as skl
 import tensorflow as tf
 import numpy as np
@@ -17,49 +17,53 @@ def deepnn(x):
     x_peaks = tf.reshape(x, [-1, 4, 251, 1])
 
     # First convolutional layer
-    W_conv1 = weight_variable([4, 6, 1, 32])
-    b_conv1 = bias_variable([32])
+    W_conv1 = weight_variable([4, 19, 1, 300])
+    b_conv1 = bias_variable([300])
     h_conv1 = tf.nn.relu(conv2d(x_peaks, W_conv1) + b_conv1)
 
     # Pooling layer
-    h_pool1 = max_pool(h_conv1, 2, 2)
+    h_pool1 = max_pool(h_conv1, 2, 3)
 
     # Second convolutional layer
-    W_conv2 = weight_variable([2, 8, 32, 64])
-    b_conv2 = bias_variable([64])
+    W_conv2 = weight_variable([2, 11, 300, 200])
+    b_conv2 = bias_variable([200])
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
     # Second pooling layer.
-    h_pool2 = max_pool(h_conv2, 2, 2)
+    h_pool2 = max_pool(h_conv2, 2, 4)
 
     # Third convolutional layer
-    W_conv3 = weight_variable([1, 10, 64, 128])
-    b_conv3 = bias_variable([128])
+    W_conv3 = weight_variable([1, 7, 200, 200])
+    b_conv3 = bias_variable([200])
     h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
 
     # Third pooling layer
-    h_pool3 = max_pool(h_conv3, 1, 2)
+    h_pool3 = max_pool(h_conv3, 1, 4)
 
     # Fully connected layer 1
-    W_fc1 = weight_variable([32*128, 2048])
-    b_fc1 = bias_variable([2048])
+    W_fc1 = weight_variable([6*200, 1000])
+    b_fc1 = bias_variable([1000])
 
-    h_pool3_flat = tf.reshape(h_pool3, [-1, 32*128])
+    h_pool3_flat = tf.reshape(h_pool3, [-1, 6*200])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
-    # Fully connected layer 2
-    W_fc2 = weight_variable([2048, 1024])
-    b_fc2 = bias_variable([1024])
-
-    h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
-
-    # Dropout - controls the complexity of the model, prevents co-adaptation of
+    # Dropout1 - controls the complexity of the model, prevents co-adaptation of
     # features.
     keep_prob = tf.placeholder(tf.float32)
+    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+
+    # Fully connected layer 2
+    W_fc2 = weight_variable([1000, 1000])
+    b_fc2 = bias_variable([1000])
+
+    h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+
+    # Dropout2 - controls the complexity of the model, prevents co-adaptation of
+    # features.
     h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
 
     # Map the remaining features to 1 class
-    W_fc3 = weight_variable([1024, 1])
+    W_fc3 = weight_variable([1000, 1])
     b_fc3 = bias_variable([1])
 
     y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
@@ -99,11 +103,11 @@ def next_training_batch(X,y,size):
 
 def main(_):
     # Import training and validation data
-    peaksBinTrain = scipy.io.loadmat('peaksBinTrain.mat')
+    peaksBinTrain = sio.loadmat('peaksBinTrain.mat')
     X_train = peaksBinTrain['seq']
     y_train = peaksBinTrain['labels']
 
-    peaksBinValid = scipy.io.loadmat('peaksBinValid.mat')
+    peaksBinValid = sio.loadmat('peaksBinValid.mat')
     X_valid = peaksBinValid['seq']
     y_valid = peaksBinValid['labels']
 
@@ -112,6 +116,7 @@ def main(_):
 
     # Want dense numpy ndarray
     X_train = np.asarray(X_train.todense()).astype(int)
+    X_valid = np.asarray(X_valid.todense()).astype(int)
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004])
@@ -131,12 +136,12 @@ def main(_):
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
-        for i in range(1000):
+        for i in range(100):
             batch = next_training_batch(X_train, y_train, 50)
-            if i % 100 == 0:
+            if i % 10 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
-            train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
+            train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
         print('test accuracy %g' % accuracy.eval(feed_dict={x: X_valid, y_: y_valid, keep_prob: 1.0}))
 
