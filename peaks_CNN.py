@@ -17,7 +17,7 @@ def deepnn(x):
     x_peaks = tf.reshape(x, [-1, 4, 251, 1])
 
     # First convolutional layer
-    W_conv1 = weight_variable([2, 2, 1, 32])
+    W_conv1 = weight_variable([4, 6, 1, 32])
     b_conv1 = bias_variable([32])
     h_conv1 = tf.nn.relu(conv2d(x_peaks, W_conv1) + b_conv1)
 
@@ -25,7 +25,7 @@ def deepnn(x):
     h_pool1 = max_pool(h_conv1, 2, 2)
 
     # Second convolutional layer
-    W_conv2 = weight_variable([2, 4, 32, 64])
+    W_conv2 = weight_variable([2, 8, 32, 64])
     b_conv2 = bias_variable([64])
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
 
@@ -33,7 +33,7 @@ def deepnn(x):
     h_pool2 = max_pool(h_conv2, 2, 2)
 
     # Third convolutional layer
-    W_conv3 = weight_variable([1, 6, 64, 128])
+    W_conv3 = weight_variable([1, 10, 64, 128])
     b_conv3 = bias_variable([128])
     h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
 
@@ -48,7 +48,7 @@ def deepnn(x):
     h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
 
     # Fully connected layer 2
-    W_fc2 = weight_variable([2048, 1004])
+    W_fc2 = weight_variable([2048, 1024])
     b_fc2 = bias_variable([1004])
 
     h_fc2 = tf.nn.relu(tf.matmul(h_fc1, W_fc2) + b_fc2)
@@ -58,11 +58,11 @@ def deepnn(x):
     keep_prob = tf.placeholder(tf.float32)
     h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
 
-    # Map the ??? features to 1 class
-    W_c3 = weight_variable([1004, 1])
-    b_c3 = bias_variable([1])
+    # Map the remaining features to 1 class
+    W_fc3 = weight_variable([1024, 1])
+    b_fc3 = bias_variable([1])
 
-    y_conv = tf.matmul(h_fc2_drop, W_c3) + b_c3
+    y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
     return y_conv, keep_prob
 
 
@@ -88,12 +88,14 @@ def bias_variable(shape):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial)
 
+
 def next_training_batch(X,y,size):
     """next_training_batch generates a batch of random training examples."""
     x_batch = X[np.random.choice(X.shape[0], size, False), :]
     y_batch = y[np.random.choice(y.shape[0], size, False)]
 
     return (x_batch, y_batch)
+
 
 def main(_):
     # Import data
