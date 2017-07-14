@@ -155,9 +155,7 @@ def main(_):
     y_conv, keep_prob = deepnn(x)
 
     cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_conv))
-
-    # TODO: need to change this to RMSprop for SGD
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
+    train_step = tf.train.RMSPropOptimizer(1e-3).minimize(cross_entropy)
 
     y_hat = tf.greater(y_conv, 0.5)
     correct_prediction = tf.equal(y_hat, tf.equal(y_,1))
