@@ -19,7 +19,15 @@ def deepnn(x):
     # First convolutional layer
     W_conv1 = weight_variable([4, 19, 1, 300])
     b_conv1 = bias_variable([300])
-    h_conv1 = tf.nn.relu(conv2d(x_peaks, W_conv1) + b_conv1)
+    conv_layer = conv2d(x_peaks, W_conv1)
+
+    mean, variance = tf.nn.moments(conv_layer, [0, 1, 2], keep_dims=True)
+    scale = tf.Variable(tf.ones([300]))
+    offset = tf.Variable(tf.zeros([300]))
+
+    z = tf.nn.batch_normalization(conv_layer, mean, variance, scale, offset, 1e-3)
+
+    h_conv1 = tf.nn.relu(z + b_conv1)
 
     # Pooling layer
     h_pool1 = max_pool(h_conv1, 2, 3)
@@ -27,7 +35,15 @@ def deepnn(x):
     # Second convolutional layer
     W_conv2 = weight_variable([2, 11, 300, 200])
     b_conv2 = bias_variable([200])
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
+
+    conv_layer = conv2d(h_pool1, W_conv2)
+    mean, variance = tf.nn.moments(conv_layer, [0, 1, 2], keep_dims=True)
+    scale = tf.Variable(tf.ones([200]))
+    offset = tf.Variable(tf.zeros([200]))
+
+    z = tf.nn.batch_normalization(conv_layer, mean, variance, scale, offset, 1e-3)
+
+    h_conv2 = tf.nn.relu(z + b_conv2)
 
     # Second pooling layer.
     h_pool2 = max_pool(h_conv2, 2, 4)
@@ -35,7 +51,15 @@ def deepnn(x):
     # Third convolutional layer
     W_conv3 = weight_variable([1, 7, 200, 200])
     b_conv3 = bias_variable([200])
-    h_conv3 = tf.nn.relu(conv2d(h_pool2, W_conv3) + b_conv3)
+    conv_layer = conv2d(h_pool2, W_conv3)
+
+    mean, variance = tf.nn.moments(conv_layer, [0, 1, 2], keep_dims=True)
+    scale = tf.Variable(tf.ones([200]))
+    offset = tf.Variable(tf.zeros([200]))
+
+    z = tf.nn.batch_normalization(conv_layer, mean, variance, scale, offset, 1e-3)
+
+    h_conv3 = tf.nn.relu(z + b_conv3)
 
     # Third pooling layer
     h_pool3 = max_pool(h_conv3, 1, 4)
@@ -139,11 +163,11 @@ def main(_):
         for i in range(100):
             batch = next_training_batch(X_train, y_train, 50)
             if i % 10 == 0:
-                train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 1.0})
+                train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-        print('test accuracy %g' % accuracy.eval(feed_dict={x: X_valid, y_: y_valid, keep_prob: 1.0}))
+        print('test accuracy %g' % accuracy.eval(feed_dict={x: X_valid, y_: y_valid, keep_prob: 0.3}))
 
 
 if __name__ == '__main__':
