@@ -9,8 +9,6 @@ import sklearn as skl
 import tensorflow as tf
 import numpy as np
 
-FLAGS = None
-
 
 def deepnn(x):
     # Reshape to use within a convolutional neural net.
@@ -21,13 +19,9 @@ def deepnn(x):
     b_conv1 = bias_variable([300])
     conv_layer = conv2d(x_peaks, W_conv1)
 
-    mean, variance = tf.nn.moments(conv_layer, [0, 1, 2], keep_dims=True)
-    scale = tf.Variable(tf.ones([300]))
-    offset = tf.Variable(tf.zeros([300]))
+    z1 = batch_normalization(conv_layer, 300,  1e-3)
 
-    z = tf.nn.batch_normalization(conv_layer, mean, variance, scale, offset, 1e-3)
-
-    h_conv1 = tf.nn.relu(z + b_conv1)
+    h_conv1 = tf.nn.relu(z1 + b_conv1)
 
     # Pooling layer
     h_pool1 = max_pool(h_conv1, 2, 3)
@@ -35,15 +29,11 @@ def deepnn(x):
     # Second convolutional layer
     W_conv2 = weight_variable([2, 11, 300, 200])
     b_conv2 = bias_variable([200])
-
     conv_layer = conv2d(h_pool1, W_conv2)
-    mean, variance = tf.nn.moments(conv_layer, [0, 1, 2], keep_dims=True)
-    scale = tf.Variable(tf.ones([200]))
-    offset = tf.Variable(tf.zeros([200]))
 
-    z = tf.nn.batch_normalization(conv_layer, mean, variance, scale, offset, 1e-3)
+    z2 = batch_normalization(conv_layer, 200, 1e-3)
 
-    h_conv2 = tf.nn.relu(z + b_conv2)
+    h_conv2 = tf.nn.relu(z2 + b_conv2)
 
     # Second pooling layer.
     h_pool2 = max_pool(h_conv2, 2, 4)
@@ -53,13 +43,9 @@ def deepnn(x):
     b_conv3 = bias_variable([200])
     conv_layer = conv2d(h_pool2, W_conv3)
 
-    mean, variance = tf.nn.moments(conv_layer, [0, 1, 2], keep_dims=True)
-    scale = tf.Variable(tf.ones([200]))
-    offset = tf.Variable(tf.zeros([200]))
+    z3 = batch_normalization(conv_layer, 200, 1e-3)
 
-    z = tf.nn.batch_normalization(conv_layer, mean, variance, scale, offset, 1e-3)
-
-    h_conv3 = tf.nn.relu(z + b_conv3)
+    h_conv3 = tf.nn.relu(z3 + b_conv3)
 
     # Third pooling layer
     h_pool3 = max_pool(h_conv3, 1, 4)
@@ -117,6 +103,16 @@ def bias_variable(shape):
     return tf.Variable(initial)
 
 
+def batch_normalization(x, dim, eps):
+    """normalizes and returns batch"""
+    mean, variance = tf.nn.moments(x, [0, 1, 2], keep_dims=True)
+    scale = tf.Variable(tf.ones([dim]))
+    offset = tf.Variable(tf.zeros([dim]))
+
+    bn = tf.nn.batch_normalization(x, mean, variance, scale, offset, eps)
+    return bn
+
+
 def next_training_batch(X,y,size):
     """next_training_batch generates a batch of random training examples."""
     x_batch = X[np.random.choice(X.shape[0], size, False), :]
@@ -125,8 +121,8 @@ def next_training_batch(X,y,size):
     return (x_batch, y_batch)
 
 
-def main(_):
-    # Import training and validation data
+def import_training_data():
+    """loads training files and extracts training sets"""
     peaksBinTrain = sio.loadmat('peaksBinTrain.mat')
     X_train = peaksBinTrain['seq']
     y_train = peaksBinTrain['labels']
@@ -142,6 +138,13 @@ def main(_):
     X_train = np.asarray(X_train.todense()).astype(int)
     X_valid = np.asarray(X_valid.todense()).astype(int)
 
+    return X_train, y_train, X_valid, y_valid
+
+
+def main(_):
+    # Import training and validation data
+    X_train, y_train, X_valid, y_valid = import_training_data()
+
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004])
 
@@ -152,6 +155,8 @@ def main(_):
     y_conv, keep_prob = deepnn(x)
 
     cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_conv))
+
+    # TODO: need to change this to RMSprop for SGD
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
 
     y_hat = tf.greater(y_conv, 0.5)
