@@ -161,6 +161,8 @@ def main(_):
     correct_prediction = tf.equal(y_hat, tf.equal(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
+    saver = tf.train.Saver()
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for i in range(100):
@@ -172,6 +174,7 @@ def main(_):
 
         print('test accuracy %g' % accuracy.eval(feed_dict={x: X_valid, y_: y_valid, keep_prob: 0.3}))
 
+        saver.save(sess, "tmp/model1")
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=[sys.argv[0]])
