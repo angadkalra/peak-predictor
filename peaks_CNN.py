@@ -113,37 +113,66 @@ def batch_normalization(x, dim, eps):
     return bn
 
 
-def next_training_batch(X,y,size):
+def next_training_batch(data, size):
     """next_training_batch generates a batch of random training examples."""
-    x_batch = X[np.random.choice(X.shape[0], size, False), :]
-    y_batch = y[np.random.choice(y.shape[0], size, False)]
+    x_pos = data['x_pos']
+    y_pos = data['y_pos']
+    x_neg = data['x_neg']
+    y_neg = data['y_neg']
 
-    return (x_batch, y_batch)
+    pos_idxs = np.random.choice(x_pos.shape[0], int(size/2), False)
+    neg_idxs = np.random.choice(x_neg.shape[0], int(size/2), False)
+
+    x_batch_pos = x_pos[pos_idxs, :]
+    y_batch_pos = y_pos[pos_idxs, :]
+
+    x_batch_neg = x_neg[neg_idxs, :]
+    y_batch_neg = y_neg[neg_idxs, :]
+
+    x_batch = np.concatenate((x_batch_pos, x_batch_neg))
+    y_batch = np.concatenate((y_batch_pos, y_batch_neg))
+
+    x_batch, y_batch = skl.utils.shuffle(x_batch,y_batch)
+
+    return x_batch, y_batch
 
 
 def import_training_data():
-    """loads training files and extracts training sets"""
-    peaksBinTrain = sio.loadmat('peaksBinTrain.mat')
-    X_train = peaksBinTrain['seq']
-    y_train = peaksBinTrain['labels']
+    """loads training and validation files and extracts training and validation sets"""
+    train_pos = sio.loadmat('peaksBinTrainPos.mat')
+    train_neg = sio.loadmat('peaksBinTrainNeg.mat')
+
+    x_train_pos = train_pos['seq']
+    y_train_pos = train_pos['labels']
+
+    x_train_neg = train_neg['seq']
+    y_train_neg = train_neg['labels']
 
     peaksBinValid = sio.loadmat('peaksBinValid.mat')
-    X_valid = peaksBinValid['seq']
+    x_valid = peaksBinValid['seq']
     y_valid = peaksBinValid['labels']
 
-    # They are permuted in the same way
-    X_train, y_train = skl.utils.shuffle(X_train, y_train)
-
     # Want dense numpy ndarray
-    X_train = np.asarray(X_train.todense()).astype(int)
-    X_valid = np.asarray(X_valid.todense()).astype(int)
+    x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
+    x_train_neg = np.asarray(x_train_neg.todense()).astype(int)
+    x_valid = np.asarray(x_valid.todense()).astype(int)
 
-    return X_train, y_train, X_valid, y_valid
+    train_data = {}
+    train_data['x_pos'] = x_train_pos
+    train_data['y_pos'] = y_train_pos
+    train_data['x_neg'] = x_train_neg
+    train_data['y_neg'] = y_train_neg
+    train_data['x_valid'] = x_valid
+    train_data['y_valid'] = y_valid
+
+    return train_data
 
 
 def main(_):
     # Import training and validation data
-    X_train, y_train, X_valid, y_valid = import_training_data()
+    train_data = import_training_data()
+
+    batch_size = 50
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004])
@@ -166,13 +195,13 @@ def main(_):
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         for i in range(100):
-            batch = next_training_batch(X_train, y_train, 50)
+            batch = next_training_batch(train_data, batch_size)
             if i % 10 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-        print('test accuracy %g' % accuracy.eval(feed_dict={x: X_valid, y_: y_valid, keep_prob: 0.3}))
+        print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
 
         saver.save(sess, "tmp/model1")
 
