@@ -175,10 +175,10 @@ def main(_):
     batch_size = 50
 
     # Create the model
-    x = tf.placeholder(tf.float32, [None, 1004])
+    x = tf.placeholder(tf.float32, [batch_size, 1004])
 
     # Define loss and optimizer
-    y_ = tf.placeholder(tf.float32, [None, 1])
+    y_ = tf.placeholder(tf.float32, [batch_size, 1])
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
@@ -189,6 +189,8 @@ def main(_):
     y_hat = tf.greater(y_conv, 0.5)
     correct_prediction = tf.equal(y_hat, tf.equal(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    precision = tf.metrics.precision(y_, y_hat)[0]
+    recall = tf.metrics.recall(y_, y_hat)[0]
 
     saver = tf.train.Saver()
 
@@ -201,9 +203,9 @@ def main(_):
                 print('step %d, training accuracy %g' % (i, train_accuracy))
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-        print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
+        # print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
 
-        saver.save(sess, "tmp/model1")
+        saver.save(sess, "models/model1")
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=[sys.argv[0]])
