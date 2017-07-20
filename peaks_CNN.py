@@ -175,10 +175,10 @@ def main(_):
     batch_size = 50
 
     # Create the model
-    x = tf.placeholder(tf.float32, [None, 1004])
+    x = tf.placeholder(tf.float32, [batch_size, 1004])
 
     # Define loss and optimizer
-    y_ = tf.placeholder(tf.float32, [None, 1])
+    y_ = tf.placeholder(tf.float32, [batch_size, 1])
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
@@ -207,6 +207,7 @@ def main(_):
         # print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
 
         saver.save(sess, "models/model")
+
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=[sys.argv[0]])
