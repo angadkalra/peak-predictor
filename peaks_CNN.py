@@ -189,21 +189,24 @@ def main(_):
     y_hat = tf.greater(y_conv, 0.5)
     correct_prediction = tf.equal(y_hat, tf.equal(y_,1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    precision = tf.metrics.precision(y_, y_hat)
+    recall = tf.metrics.recall(y_, y_hat)
 
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
         for i in range(100):
-            batch = next_training_batch(train_data, batch_size)
+            batch = next_training_batch(train_data,  batch_size)
             if i % 10 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 print('step %d, training accuracy %g' % (i, train_accuracy))
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-        print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
+        # print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
 
-        saver.save(sess, "tmp/model1")
+        saver.save(sess, "models/model")
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=[sys.argv[0]])
