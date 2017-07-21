@@ -187,10 +187,16 @@ def main(_):
     train_step = tf.train.RMSPropOptimizer(1e-3).minimize(cross_entropy)
 
     y_hat = tf.greater(y_conv, 0.5)
-    correct_prediction = tf.equal(y_hat, tf.equal(y_,1))
+    correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-    precision = tf.metrics.precision(y_, y_hat)
-    recall = tf.metrics.recall(y_, y_hat)
+
+    # precision, pr_op = tf.metrics.precision(y_, y_conv, updates_collections=tf.get_collection(tf.GraphKeys))
+    # recall, re_op = tf.metrics.recall(y_, y_conv, updates_collections=tf.get_collection(tf.GraphKeys))
+
+    preds = tf.cast(y_hat, tf.float32)
+    true_pos = tf.count_nonzero(y_ * preds)
+    false_pos = tf.count_nonzero((y_ - 1) * preds)
+    false_neg = tf.count_nonzero(y_ * (preds - 1))
 
     saver = tf.train.Saver()
 
@@ -201,7 +207,16 @@ def main(_):
             batch = next_training_batch(train_data,  batch_size)
             if i % 10 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-                print('step %d, training accuracy %g' % (i, train_accuracy))
+
+                tp = true_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+                fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+                fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+                train_precision = tp / (tp + fp)
+                train_recall = tp / (tp + fn)
+
+                print('step %d, training accuracy %g, training precision %g, training recall %g' %
+                      (i, train_accuracy, train_precision, train_recall))
+
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
         # print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
