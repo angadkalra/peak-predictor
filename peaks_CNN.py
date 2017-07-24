@@ -8,6 +8,7 @@ import scipy.io as sio
 import sklearn as skl
 import tensorflow as tf
 import numpy as np
+import time
 
 
 def deepnn(x):
@@ -172,13 +173,19 @@ def main(_):
     # Import training and validation data
     train_data = import_training_data()
 
+    x_valid = train_data['x_valid']
+    y_valid = train_data['y_valid']
+
+    x_valid = x_valid[:1000, :]
+    y_valid = y_valid[:1000, :]
+
     batch_size = 50
 
     # Create the model
-    x = tf.placeholder(tf.float32, [batch_size, 1004])
+    x = tf.placeholder(tf.float32, [None, 1004])
 
     # Define loss and optimizer
-    y_ = tf.placeholder(tf.float32, [batch_size, 1])
+    y_ = tf.placeholder(tf.float32, [None, 1])
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
@@ -203,25 +210,44 @@ def main(_):
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
-        for i in range(100):
+        start = time.time()
+        for i in range(1000):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 10 == 0:
+            if i % 100 == 0:
                 train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
                 tp = true_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-                train_precision = tp / (tp + fp)
-                train_recall = tp / (tp + fn)
+
+                if tp > 0 or fp > 0 or fn > 0:
+                    train_precision = tp / (tp + fp)
+                    train_recall = tp / (tp + fn)
+                else:
+                    train_precision = -1
+                    train_recall = -1
 
                 print('step %d, training accuracy %g, training precision %g, training recall %g' %
                       (i, train_accuracy, train_precision, train_recall))
 
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-        # print('test accuracy %g' % accuracy.eval(feed_dict={x: train_data['x_valid'], y_: train_data['y_valid'], keep_prob: 0.3}))
+        end = time.time()
+        print('Training time %g seconds' % (end - start))
 
         saver.save(sess, "models/model")
+
+        tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        fn = false_neg.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+
+        test_precision = tp / (tp + fp)
+        test_recall = tp / (tp + fn)
+        test_accuracy = accuracy.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+
+        print('test accuracy %g' % test_accuracy)
+        print('test precision %g' % test_precision)
+        print('test recall %g' % test_recall)
 
 
 if __name__ == '__main__':
