@@ -183,13 +183,12 @@ def main(_):
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004])
-
-    # Define loss and optimizer
     y_ = tf.placeholder(tf.float32, [None, 1])
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
 
+    # Define loss and optimizer
     cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_conv))
     train_step = tf.train.RMSPropOptimizer(1e-3).minimize(cross_entropy)
 
@@ -220,12 +219,12 @@ def main(_):
                 fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-                if tp > 0 or fp > 0 or fn > 0:
+                if tp == 0 and (fp == 0 or fn == 0):
                     train_precision = tp / (tp + fp)
                     train_recall = tp / (tp + fn)
                 else:
-                    train_precision = -1
-                    train_recall = -1
+                    train_precision = tp / (tp + fp)
+                    train_recall = tp / (tp + fn)
 
                 print('step %d, training accuracy %g, training precision %g, training recall %g' %
                       (i, train_accuracy, train_precision, train_recall))
@@ -235,7 +234,7 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "models/model")
+        saver.save(sess, "models/model2")
 
         tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
         fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
