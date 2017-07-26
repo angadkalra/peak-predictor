@@ -16,66 +16,66 @@ def deepnn(x):
     x_peaks = tf.reshape(x, [-1, 4, 251, 1])
 
     # First convolutional layer
-    W_conv1 = weight_variable([4, 19, 1, 300])
-    b_conv1 = bias_variable([300])
+    W_conv1 = weight_variable([4, 19, 1, 300], 'W_conv1')
+    b_conv1 = bias_variable([300], 'b_conv1')
     conv_layer = conv2d(x_peaks, W_conv1)
 
     z1 = batch_normalization(conv_layer, 300,  1e-3)
 
-    h_conv1 = tf.nn.relu(z1 + b_conv1)
+    h_conv1 = tf.nn.relu(z1 + b_conv1, name='h_conv1')
 
     # Pooling layer
-    h_pool1 = max_pool(h_conv1, 2, 3)
+    h_pool1 = max_pool(h_conv1, 2, 3, 'h_pool1')
 
     # Second convolutional layer
-    W_conv2 = weight_variable([2, 11, 300, 200])
-    b_conv2 = bias_variable([200])
+    W_conv2 = weight_variable([2, 11, 300, 200], 'W_conv2')
+    b_conv2 = bias_variable([200], 'b_conv2')
     conv_layer = conv2d(h_pool1, W_conv2)
 
     z2 = batch_normalization(conv_layer, 200, 1e-3)
 
-    h_conv2 = tf.nn.relu(z2 + b_conv2)
+    h_conv2 = tf.nn.relu(z2 + b_conv2, 'h_conv2')
 
     # Second pooling layer.
-    h_pool2 = max_pool(h_conv2, 2, 4)
+    h_pool2 = max_pool(h_conv2, 2, 4, 'h_pool2')
 
     # Third convolutional layer
-    W_conv3 = weight_variable([1, 7, 200, 200])
-    b_conv3 = bias_variable([200])
+    W_conv3 = weight_variable([1, 7, 200, 200], 'W_conv3')
+    b_conv3 = bias_variable([200], 'b_conv3')
     conv_layer = conv2d(h_pool2, W_conv3)
 
     z3 = batch_normalization(conv_layer, 200, 1e-3)
 
-    h_conv3 = tf.nn.relu(z3 + b_conv3)
+    h_conv3 = tf.nn.relu(z3 + b_conv3, 'h_conv3')
 
     # Third pooling layer
-    h_pool3 = max_pool(h_conv3, 1, 4)
+    h_pool3 = max_pool(h_conv3, 1, 4, 'h_pool3')
 
     # Fully connected layer 1
-    W_fc1 = weight_variable([6*200, 1000])
-    b_fc1 = bias_variable([1000])
+    W_fc1 = weight_variable([6*200, 1000], 'W_fc1')
+    b_fc1 = bias_variable([1000], 'b_fc1')
 
     h_pool3_flat = tf.reshape(h_pool3, [-1, 6*200])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1)
+    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1, name='h_fc1')
 
     # Dropout1 - controls the complexity of the model, prevents co-adaptation of
     # features.
     keep_prob = tf.placeholder(tf.float32)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
+    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob, name='h_fc1_drop')
 
     # Fully connected layer 2
-    W_fc2 = weight_variable([1000, 1000])
-    b_fc2 = bias_variable([1000])
+    W_fc2 = weight_variable([1000, 1000], 'W_fc2')
+    b_fc2 = bias_variable([1000], 'b_fc2')
 
-    h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+    h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2, name='h_fc2')
 
     # Dropout2 - controls the complexity of the model, prevents co-adaptation of
     # features.
-    h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob)
+    h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob, name='h_fc2_drop')
 
     # Map the remaining features to 1 class
-    W_fc3 = weight_variable([1000, 1])
-    b_fc3 = bias_variable([1])
+    W_fc3 = weight_variable([1000, 1], 'W_fc3')
+    b_fc3 = bias_variable([1], 'b_fc3')
 
     y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
     return y_conv, keep_prob
@@ -86,22 +86,22 @@ def conv2d(x, W):
     return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
 
 
-def max_pool(x, dim1, dim2):
+def max_pool(x, dim1, dim2, var_name):
     """max_pool_2x2 downsamples a feature map by 2X."""
     return tf.nn.max_pool(x, ksize=[1, dim1, dim2, 1],
-                          strides=[1, dim1, dim2, 1], padding='SAME')
+                          strides=[1, dim1, dim2, 1], padding='SAME', name=var_name)
 
 
-def weight_variable(shape):
+def weight_variable(shape, var_name):
     """weight_variable generates a weight variable of a given shape."""
     initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
+    return tf.Variable(initial, name=var_name)
 
 
-def bias_variable(shape):
+def bias_variable(shape, var_name):
     """bias_variable generates a bias variable of a given shape."""
     initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
+    return tf.Variable(initial, name=var_name)
 
 
 def batch_normalization(x, dim, eps):
@@ -179,7 +179,7 @@ def main(_):
     x_valid = x_valid[:1000, :]
     y_valid = y_valid[:1000, :]
 
-    batch_size = 50
+    batch_size = 100
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004])
@@ -195,9 +195,6 @@ def main(_):
     y_hat = tf.greater(y_conv, 0.5)
     correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-    # precision, pr_op = tf.metrics.precision(y_, y_conv, updates_collections=tf.get_collection(tf.GraphKeys))
-    # recall, re_op = tf.metrics.recall(y_, y_conv, updates_collections=tf.get_collection(tf.GraphKeys))
 
     preds = tf.cast(y_hat, tf.float32)
     true_pos = tf.count_nonzero(y_ * preds)
