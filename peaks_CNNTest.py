@@ -13,12 +13,12 @@ def deepnn(x, session):
     x_peaks = tf.reshape(x, [-1, 4, 251, 1])
 
     # First convolutional layer
-    W_conv1 = graph.get_tensor_by_name('Variable:0')
-    b_conv1 = graph.get_tensor_by_name('Variable_1:0')
+    W_conv1 = graph.get_operation_by_name('W_conv1').values()[0]
+    b_conv1 = graph.get_operation_by_name('b_conv1').values()[0]
     conv_layer = conv2d(x_peaks, W_conv1)
 
-    scale1 = graph.get_tensor_by_name('Variable_2:0')
-    offset1 = graph.get_tensor_by_name('Variable_3:0')
+    scale1 = graph.get_operation_by_name('scale1').values()[0]
+    offset1 = graph.get_operation_by_name('offset1').values()[0]
     z1 = batch_normalization(conv_layer, scale1, offset1, 300,  1e-3)
 
     h_conv1 = tf.nn.relu(z1 + b_conv1, name='h_conv1')
@@ -27,12 +27,12 @@ def deepnn(x, session):
     h_pool1 = max_pool(h_conv1, 2, 3, 'h_pool1')
 
     # Second convolutional layer
-    W_conv2 = graph.get_tensor_by_name('Variable_4:0')
-    b_conv2 = graph.get_tensor_by_name('Variable_5:0')
+    W_conv2 = graph.get_operation_by_name('W_conv2').values()[0]
+    b_conv2 = graph.get_operation_by_name('b_conv2').values()[0]
     conv_layer = conv2d(h_pool1, W_conv2)
 
-    scale2 = graph.get_tensor_by_name('Variable_6:0')
-    offset2 = graph.get_tensor_by_name('Variable_7:0')
+    scale2 = graph.get_operation_by_name('scale2').values()[0]
+    offset2 = graph.get_operation_by_name('offset2').values()[0]
     z2 = batch_normalization(conv_layer, scale2, offset2, 200, 1e-3)
 
     h_conv2 = tf.nn.relu(z2 + b_conv2, 'h_conv2')
@@ -41,12 +41,12 @@ def deepnn(x, session):
     h_pool2 = max_pool(h_conv2, 2, 4, 'h_pool2')
 
     # Third convolutional layer
-    W_conv3 = graph.get_tensor_by_name('Variable_8:0')
-    b_conv3 = graph.get_tensor_by_name('Variable_9:0')
+    W_conv3 = graph.get_operation_by_name('W_conv3').values()[0]
+    b_conv3 = graph.get_operation_by_name('b_conv3').values()[0]
     conv_layer = conv2d(h_pool2, W_conv3)
 
-    scale3 = graph.get_tensor_by_name('Variable_10:0')
-    offset3 = graph.get_tensor_by_name('Variable_11:0')
+    scale3 = graph.get_operation_by_name('scale3').values()[0]
+    offset3 = graph.get_operation_by_name('offset3').values()[0]
     z3 = batch_normalization(conv_layer, scale3, offset3, 200, 1e-3)
 
     h_conv3 = tf.nn.relu(z3 + b_conv3, 'h_conv3')
@@ -55,8 +55,8 @@ def deepnn(x, session):
     h_pool3 = max_pool(h_conv3, 1, 4, 'h_pool3')
 
     # Fully connected layer 1
-    W_fc1 = graph.get_tensor_by_name('Variable_12:0')
-    b_fc1 = graph.get_tensor_by_name('Variable_13:0')
+    W_fc1 = graph.get_operation_by_name('W_fc1').values()[0]
+    b_fc1 = graph.get_operation_by_name('b_fc1').values()[0]
 
     h_pool3_flat = tf.reshape(h_pool3, [-1, 6*200])
     h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1, name='h_fc1')
@@ -67,8 +67,8 @@ def deepnn(x, session):
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob, name='h_fc1_drop')
 
     # Fully connected layer 2
-    W_fc2 = graph.get_tensor_by_name('Variable_14:0')
-    b_fc2 = graph.get_tensor_by_name('Variable_15:0')
+    W_fc2 = graph.get_operation_by_name('W_fc2').values()[0]
+    b_fc2 = graph.get_operation_by_name('b_fc2').values()[0]
 
     h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2, name='h_fc2')
 
@@ -77,8 +77,8 @@ def deepnn(x, session):
     h_fc2_drop = tf.nn.dropout(h_fc2, keep_prob, name='h_fc2_drop')
 
     # Map the remaining features to 1 class
-    W_fc3 = graph.get_tensor_by_name('Variable_16:0')
-    b_fc3 = graph.get_tensor_by_name('Variable_17:0')
+    W_fc3 = graph.get_operation_by_name('W_fc3').values()[0]
+    b_fc3 = graph.get_operation_by_name('b_fc3').values()[0]
 
     y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
     return y_conv
@@ -118,19 +118,19 @@ def main(_):
 
     sess = tf.Session()
 
-    model = tf.train.import_meta_graph('models/model.meta')
+    model = tf.train.import_meta_graph('models/model2.meta')
     model.restore(sess, tf.train.latest_checkpoint('models'))
 
     graph = tf.get_default_graph()
 
     # Define placeholders
-    x = graph.get_operation_by_name('Placeholder')
+    x = graph.get_operation_by_name('input')
     x = x.values()[0]
 
-    y_ = graph.get_operation_by_name('Placeholder_1')
+    y_ = graph.get_operation_by_name('labels')
     y_ = y_.values()[0]
 
-    keep_prob = graph.get_operation_by_name('Placeholder_2')
+    keep_prob = graph.get_operation_by_name('keep_prob')
     keep_prob = keep_prob.values()[0]
 
     # Load data
@@ -141,15 +141,24 @@ def main(_):
     test_labels = peaksBinTest['labels']
 
     # Define accuracy prediction
-    y_conv = deepnn(test_seq[1000:2000, :], session=sess)
+    y_conv = deepnn(test_seq[2500:3500, :], session=sess)
 
     y_hat = tf.greater(y_conv, 0.5)
     correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-    test_accuracy = accuracy.eval(session=sess, feed_dict={x: test_seq[1000:2000, :], y_: test_labels[1000:2000], keep_prob:0.3})
+    preds = tf.cast(y_hat, tf.float32)
+    true_pos = tf.count_nonzero(y_ * preds)
+    false_pos = tf.count_nonzero((y_ - 1) * preds)
+    false_neg = tf.count_nonzero(y_ * (preds - 1))
 
-    print('test accuracy % g' % test_accuracy)
+    tp = true_pos.eval(session=sess, feed_dict={x: test_seq[2500:3500, :], y_: test_labels[2500:3500], keep_prob:0.3})
+    fp = false_pos.eval(session=sess, feed_dict={x: test_seq[2500:3500, :], y_: test_labels[2500:3500], keep_prob:0.3})
+    fn = false_neg.eval(session=sess, feed_dict={x: test_seq[2500:3500, :], y_: test_labels[2500:3500], keep_prob:0.3})
+
+    test_accuracy = accuracy.eval(session=sess, feed_dict={x: test_seq[2500:3500, :], y_: test_labels[2500:3500], keep_prob:0.3})
+
+    print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=[sys.argv[0]])

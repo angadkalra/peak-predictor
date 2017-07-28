@@ -20,7 +20,9 @@ def deepnn(x):
     b_conv1 = bias_variable([300], 'b_conv1')
     conv_layer = conv2d(x_peaks, W_conv1)
 
-    z1 = batch_normalization(conv_layer, 300,  1e-3)
+    scale1 = tf.Variable(tf.ones([300]), name='scale1')
+    offset1 = tf.Variable(tf.zeros([300]), name='offset1')
+    z1 = batch_normalization(conv_layer, scale1, offset1, 1e-3)
 
     h_conv1 = tf.nn.relu(z1 + b_conv1, name='h_conv1')
 
@@ -32,7 +34,9 @@ def deepnn(x):
     b_conv2 = bias_variable([200], 'b_conv2')
     conv_layer = conv2d(h_pool1, W_conv2)
 
-    z2 = batch_normalization(conv_layer, 200, 1e-3)
+    scale2 = tf.Variable(tf.ones([200]), name='scale2')
+    offset2 = tf.Variable(tf.zeros([200]), name='offset2')
+    z2 = batch_normalization(conv_layer, scale2, offset2, 1e-3)
 
     h_conv2 = tf.nn.relu(z2 + b_conv2, 'h_conv2')
 
@@ -44,7 +48,9 @@ def deepnn(x):
     b_conv3 = bias_variable([200], 'b_conv3')
     conv_layer = conv2d(h_pool2, W_conv3)
 
-    z3 = batch_normalization(conv_layer, 200, 1e-3)
+    scale3 = tf.Variable(tf.ones([200]), name='scale3')
+    offset3 = tf.Variable(tf.zeros([200]), name='offset3')
+    z3 = batch_normalization(conv_layer, scale3, offset3, 1e-3)
 
     h_conv3 = tf.nn.relu(z3 + b_conv3, 'h_conv3')
 
@@ -60,7 +66,7 @@ def deepnn(x):
 
     # Dropout1 - controls the complexity of the model, prevents co-adaptation of
     # features.
-    keep_prob = tf.placeholder(tf.float32)
+    keep_prob = tf.placeholder(tf.float32, name='keep_prob')
     h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob, name='h_fc1_drop')
 
     # Fully connected layer 2
@@ -104,12 +110,9 @@ def bias_variable(shape, var_name):
     return tf.Variable(initial, name=var_name)
 
 
-def batch_normalization(x, dim, eps):
+def batch_normalization(x, scale, offset, eps):
     """normalizes and returns batch"""
     mean, variance = tf.nn.moments(x, [0, 1, 2], keep_dims=True)
-    scale = tf.Variable(tf.ones([dim]))
-    offset = tf.Variable(tf.zeros([dim]))
-
     bn = tf.nn.batch_normalization(x, mean, variance, scale, offset, eps)
     return bn
 
@@ -176,19 +179,16 @@ def main(_):
     x_valid = train_data['x_valid']
     y_valid = train_data['y_valid']
 
-    x_valid = x_valid[:1000, :]
-    y_valid = y_valid[:1000, :]
-
-    batch_size = 100
+    batch_size = 50
 
     # Create the model
-    x = tf.placeholder(tf.float32, [None, 1004])
-    y_ = tf.placeholder(tf.float32, [None, 1])
+    x = tf.placeholder(tf.float32, [None, 1004], name='input')
+    y_ = tf.placeholder(tf.float32, [None, 1], name='labels')
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
 
-    # Define loss and optimizer
+    # Define performance stats and optimizer
     cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_conv))
     train_step = tf.train.RMSPropOptimizer(1e-3).minimize(cross_entropy)
 
@@ -201,6 +201,7 @@ def main(_):
     false_pos = tf.count_nonzero((y_ - 1) * preds)
     false_neg = tf.count_nonzero(y_ * (preds - 1))
 
+    # Save model
     saver = tf.train.Saver()
 
     with tf.Session() as sess:
@@ -216,34 +217,37 @@ def main(_):
                 fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
                 fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-                if tp == 0 and (fp == 0 or fn == 0):
-                    train_precision = tp / (tp + fp)
-                    train_recall = tp / (tp + fn)
-                else:
-                    train_precision = tp / (tp + fp)
-                    train_recall = tp / (tp + fn)
+                # if tp == 0 and fp == 0:
+                #     train_precision = -1
+                # else:
+                #     train_precision = tp / (tp + fp)
+                #
+                # if tp == 0 and fn == 0:
+                #     train_recall = -1
+                # else:
+                #     train_recall = tp / (tp + fn)
 
-                print('step %d, training accuracy %g, training precision %g, training recall %g' %
-                      (i, train_accuracy, train_precision, train_recall))
+                print('step %d, training accuracy %g, tp %g, fp %g, fn %g' %
+                      (i, train_accuracy, tp, fp, fn))
 
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "models/model2")
+        saver.save(sess, "models/model3")
 
         tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
         fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
         fn = false_neg.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
 
-        test_precision = tp / (tp + fp)
-        test_recall = tp / (tp + fn)
+        # test_precision = tp / (tp + fp)
+        # test_recall = tp / (tp + fn)
         test_accuracy = accuracy.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
 
-        print('test accuracy %g' % test_accuracy)
-        print('test precision %g' % test_precision)
-        print('test recall %g' % test_recall)
+        print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
+        # print('test precision %g' % test_precision)
+        # print('test recall %g' % test_recall)
 
 
 if __name__ == '__main__':
