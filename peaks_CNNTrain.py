@@ -208,6 +208,7 @@ def main(_):
         sess.run(tf.global_variables_initializer())
         sess.run(tf.local_variables_initializer())
         start = time.time()
+
         for i in range(20000):
             batch = next_training_batch(train_data,  batch_size)
             if i % 1000 == 0:
