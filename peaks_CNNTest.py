@@ -134,7 +134,7 @@ def main(_):
     keep_prob = keep_prob.values()[0]
 
     # Load data
-    peaksBinTest = sio.loadmat('peaksBinTest.mat')
+    peaksBinTest = sio.loadmat('data/peaksBinTest.mat')
 
     test_seq = peaksBinTest['seq']
     test_seq = np.asarray(test_seq.todense()).astype(np.float32)

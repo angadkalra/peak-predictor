@@ -143,8 +143,8 @@ def next_training_batch(data, size):
 
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
-    train_pos = sio.loadmat('peaksBinTrainPos.mat')
-    train_neg = sio.loadmat('peaksBinTrainNeg.mat')
+    train_pos = sio.loadmat('data/peaksBinTrainPos.mat')
+    train_neg = sio.loadmat('data/peaksBinTrainNeg.mat')
 
     x_train_pos = train_pos['seq']
     y_train_pos = train_pos['labels']
@@ -152,7 +152,7 @@ def import_training_data():
     x_train_neg = train_neg['seq']
     y_train_neg = train_neg['labels']
 
-    peaksBinValid = sio.loadmat('peaksBinValid.mat')
+    peaksBinValid = sio.loadmat('data/peaksBinValid.mat')
     x_valid = peaksBinValid['seq']
     y_valid = peaksBinValid['labels']
 
