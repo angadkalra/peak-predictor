@@ -1,7 +1,9 @@
+import os
 import csv
 import numpy as np
 
 atacSeqs = {}
+seqs = []
 
 with open('data/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
     reader = csv.reader(atac, delimiter=',')
@@ -13,4 +15,14 @@ with open('data/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
         else:
             atacSeqs[row[0]] = [(row[1], row[2])]
 
-# Read each .fa file into a dictionary with keys as "chrN" and values as a list of strings
+# Read the sequences from each .fa file using the ranges in the atacSeqs dict, then write those sequences to a txt file
+# with one sequence per line.
+
+for file in os.listdir('data/mm10'):
+    if file.endswith('.fa'):
+        # match filename with atacSeqs key, then go through ranges and read file and extract sequence for a given range.
+        # Then append that seq to seqs[].
+    else:
+        continue
+
+np.savetxt('data/seqs', seqs)
