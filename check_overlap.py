@@ -4,7 +4,7 @@ import numpy as np
 # Read data from csv files and turn into dictionaries for easy further processing
 foxp3Seqs = {}
 atacSeqs = {}
-labels = np.zeros(63145)
+labels = np.zeros(63141)
 
 with open('data/Foxp3.ChIPseq.csv') as foxp3:
     reader = csv.reader(foxp3, delimiter=',')
@@ -16,8 +16,8 @@ with open('data/Foxp3.ChIPseq.csv') as foxp3:
         else:
             foxp3Seqs[row[0]] = [(row[1], row[2])]
 
-with open('data/dpz.SplTreg.ATAC.density_GCandquantile.csv') as dpz:
-    reader = csv.reader(dpz, delimiter=',')
+with open('data/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
+    reader = csv.reader(atac, delimiter=',')
     next(reader)    # skip column headers
 
     for row in reader:
@@ -47,5 +47,3 @@ for chrm, rangeList in foxp3Seqs.items():
 
 labels = labels.astype(np.int)
 np.savetxt('data/labels', labels)
-
-print('Done')

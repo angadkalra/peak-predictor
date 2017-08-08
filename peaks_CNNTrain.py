@@ -179,7 +179,7 @@ def main(_):
     x_valid = train_data['x_valid']
     y_valid = train_data['y_valid']
 
-    batch_size = 50
+    batch_size = 500
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004], name='input')
