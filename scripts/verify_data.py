@@ -15,16 +15,3 @@ with open('../data/posPks', 'w+') as file:
     for pk in posPkNames:
         pkName = pk[0]
         file.write(pkName + '\n')
-
-
-# Extract posPks from labelsVerify
-
-labels = np.loadtxt('../data/labelsVerify')
-posPksVerify = np.argwhere(labels)
-
-with open('../data/posPksVerify', 'w+') as file:
-    for pk in posPksVerify:
-        pklabel = 'peak_' + str(pk[0] + 1)
-        file.write(pklabel + '\n')
-
-
