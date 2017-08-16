@@ -4,7 +4,7 @@ import numpy as np
 # Read data from csv files and turn into dictionaries for easy further processing
 foxp3Seqs = {}
 atacSeqs = {}
-labels = np.zeros(63197)
+labels = np.zeros(63197, np.float)
 
 with open('../data/original/Foxp3.ChIPseq.csv') as foxp3:
     reader = csv.reader(foxp3, delimiter=',')
@@ -29,7 +29,6 @@ with open('../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac
 
         i = i + 1
 
-
 for chrm, rangeList in foxp3Seqs.items():
 
     if chrm in atacSeqs.keys():
@@ -48,4 +47,4 @@ for chrm, rangeList in foxp3Seqs.items():
 
                     labels[peakNum - 1] = labels[peakNum - 1] + overlap/251
 
-np.savetxt('../data/overlapLabels', labels)
+labels.tofile('../data/overlapLabels', '\n')
