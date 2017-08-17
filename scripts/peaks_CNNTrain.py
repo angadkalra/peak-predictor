@@ -145,16 +145,18 @@ def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
     train_pos = sio.loadmat('../data/training/peaksBinTrainPos.mat')
     train_neg = sio.loadmat('../data/training/peaksBinTrainNeg.mat')
+    train_labels = np.loadtxt('../data/training/trainOverlapLabels')
 
     x_train_pos = train_pos['seq']
-    y_train_pos = train_pos['labelsVerify']
+    y_train_pos = train_labels[train_labels > 0]
 
     x_train_neg = train_neg['seq']
-    y_train_neg = train_neg['labelsVerify']
+    y_train_neg = train_labels[train_labels == 0]
 
     peaksBinValid = sio.loadmat('../data/training/peaksBinValid.mat')
+
     x_valid = peaksBinValid['seq']
-    y_valid = peaksBinValid['labelsVerify']
+    y_valid = np.loadtxt('../data/training/validOverlapLabels')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -183,23 +185,23 @@ def main(_):
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004], name='input')
-    y_ = tf.placeholder(tf.float32, [None, 1], name='labelsVerify')
+    y_ = tf.placeholder(tf.float32, [None, 1], name='labels')
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
 
     # Define performance stats and optimizer
-    cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_conv))
-    train_step = tf.train.RMSPropOptimizer(1e-3).minimize(cross_entropy)
+    error = tf.reduce_mean(tf.nn.l2_loss(y_ - y_conv, name='l2_loss'))
+    train_step = tf.train.RMSPropOptimizer(1e-3).minimize(error)
 
-    y_hat = tf.greater(y_conv, 0.5)
-    correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-    preds = tf.cast(y_hat, tf.float32)
-    true_pos = tf.count_nonzero(y_ * preds)
-    false_pos = tf.count_nonzero((y_ - 1) * preds)
-    false_neg = tf.count_nonzero(y_ * (preds - 1))
+    # y_hat = tf.greater(y_conv, 0.5)
+    # correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
+    # accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+    #
+    # preds = tf.cast(y_hat, tf.float32)
+    # true_pos = tf.count_nonzero(y_ * preds)
+    # false_pos = tf.count_nonzero((y_ - 1) * preds)
+    # false_neg = tf.count_nonzero(y_ * (preds - 1))
 
     # Save model
     saver = tf.train.Saver()
@@ -209,14 +211,14 @@ def main(_):
         sess.run(tf.local_variables_initializer())
         start = time.time()
 
-        for i in range(20000):
+        for i in range(1000):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 1000 == 0:
-                train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+            if i % 100 == 0:
+                train_error = error.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-                tp = true_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-                fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-                fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+                # tp = true_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+                # fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+                # fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
                 # if tp == 0 and fp == 0:
                 #     train_precision = -1
@@ -228,8 +230,10 @@ def main(_):
                 # else:
                 #     train_recall = tp / (tp + fn)
 
-                print('step %d, training accuracy %g, tp %g, fp %g, fn %g' %
-                      (i, train_accuracy, tp, fp, fn))
+                # print('step %d, training accuracy %g, tp %g, fp %g, fn %g' %
+                #       (i, train_accuracy, tp, fp, fn))
+
+                print('step %d, training error %g' % (i, train_error))
 
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
@@ -238,15 +242,16 @@ def main(_):
 
         saver.save(sess, "models/model3")
 
-        tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
-        fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
-        fn = false_neg.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        # tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        # fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        # fn = false_neg.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
 
         # test_precision = tp / (tp + fp)
         # test_recall = tp / (tp + fn)
-        test_accuracy = accuracy.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
 
-        print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
+        test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+
+        # print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
         # print('test precision %g' % test_precision)
         # print('test recall %g' % test_recall)
 

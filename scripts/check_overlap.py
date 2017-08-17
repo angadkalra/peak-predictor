@@ -4,7 +4,7 @@ import numpy as np
 # Read data from csv files and turn into dictionaries for easy further processing
 foxp3Seqs = {}
 atacSeqs = {}
-labels = np.zeros(63197)
+labels = np.zeros(63197, np.float)
 
 with open('../data/original/Foxp3.ChIPseq.csv') as foxp3:
     reader = csv.reader(foxp3, delimiter=',')
@@ -50,5 +50,7 @@ for chrm, rangeList in foxp3Seqs.items():
 
 posPks.close()
 
-labels = labels.astype(np.int)
-np.savetxt('../data/labelsVerify', labels)
+labels = np.delete(labels, np.concatenate(([4926, 23345, 26923, 35320], np.arange(44512, 44516),
+                                           np.arange(61379, 61422), np.arange(63178, 63187))))
+
+labels.tofile('../data/labelsVerify', '\n')

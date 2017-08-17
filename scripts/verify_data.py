@@ -3,13 +3,18 @@ import scipy.io as sio
 
 # Extract posPks from matlab file
 
-peaksDict = sio.loadmat('../data/original/peaksATGC.mat')
-pkNames = peaksDict['pkName']
-labels = peaksDict['labels']
+org_data = sio.loadmat('../data/original/peaksATGC.mat')
+pkNames = org_data['pkName']
+org_labels = org_data['labels']
+org_labels = org_labels[:,0]
 
-labels = labels.astype(np.bool)
+labelsVerify = np.loadtxt('../data/labelsVerify')
 
-posPkNames = pkNames[labels]
+
+
+indices = org_labels.astype(np.bool)
+
+posPkNames = pkNames[indices]
 
 with open('../data/posPks', 'w+') as file:
     for pk in posPkNames:

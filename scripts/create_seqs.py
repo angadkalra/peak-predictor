@@ -35,11 +35,12 @@ for file in os.listdir('../data/mm10'):
                 start, end = int(r[0]), int(r[1])
                 seq = chrm[start:end+1].upper()
 
-                if seq.__contains__('N') or seq.__contains__('n'):
+                if seq.__contains__('N'):
                     print(seqNum)
                     continue
+                else:
+                    output.write(seq + '\n')
 
-                output.write(seq + '\n')
                 seqNum = seqNum + 1
     else:
         continue
