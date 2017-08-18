@@ -47,7 +47,7 @@ for chrm, rangeList in foxp3Seqs.items():
 
                     labels[peakNum - 1] = labels[peakNum - 1] + overlap/251
 
-labels = np.delete(labels, np.concatenate(([4926, 23345, 26923, 35320], np.arange(44512, 44516),
+labels = np.delete(labels, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
                                            np.arange(61379, 61422), np.arange(63178, 63187))))
 
 labels.tofile('../data/overlapLabels', '\n')

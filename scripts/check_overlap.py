@@ -43,14 +43,14 @@ for chrm, rangeList in foxp3Seqs.items():
                 peakLabel = r2[2]
                 peakNum = int(peakLabel[5:])
 
-                if max(s1, s2) <= min(e1, e2) and not (labels[peakNum - 1] == 1) :
+                if max(s1, s2) <= min(e1, e2) and not (labels[peakNum - 1] == 1):
                     labels[peakNum - 1] = 1
                     if not chrm.__contains__('_'):
                         posPks.write(r2[2] + '\n')
 
 posPks.close()
 
-labels = np.delete(labels, np.concatenate(([4926, 23345, 26923, 35320], np.arange(44512, 44516),
+labels = np.delete(labels, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
                                            np.arange(61379, 61422), np.arange(63178, 63187))))
 
 labels.tofile('../data/labelsVerify', '\n')

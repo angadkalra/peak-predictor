@@ -6,11 +6,8 @@ import scipy.io as sio
 org_data = sio.loadmat('../data/original/peaksATGC.mat')
 pkNames = org_data['pkName']
 org_labels = org_data['labels']
-org_labels = org_labels[:,0]
 
 labelsVerify = np.loadtxt('../data/labelsVerify')
-
-
 
 indices = org_labels.astype(np.bool)
 

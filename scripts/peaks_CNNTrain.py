@@ -128,10 +128,10 @@ def next_training_batch(data, size):
     neg_idxs = np.random.choice(x_neg.shape[0], int(size/2), False)
 
     x_batch_pos = x_pos[pos_idxs, :]
-    y_batch_pos = y_pos[pos_idxs, :]
+    y_batch_pos = y_pos[pos_idxs]
 
     x_batch_neg = x_neg[neg_idxs, :]
-    y_batch_neg = y_neg[neg_idxs, :]
+    y_batch_neg = y_neg[neg_idxs]
 
     x_batch = np.concatenate((x_batch_pos, x_batch_neg))
     y_batch = np.concatenate((y_batch_pos, y_batch_neg))
@@ -143,20 +143,22 @@ def next_training_batch(data, size):
 
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
-    train_pos = sio.loadmat('../data/training/peaksBinTrainPos.mat')
-    train_neg = sio.loadmat('../data/training/peaksBinTrainNeg.mat')
-    train_labels = np.loadtxt('../data/training/trainOverlapLabels')
 
-    x_train_pos = train_pos['seq']
+    # train_pos = sio.loadmat('../data/training/peaksBinTrainPos.mat')
+    # train_neg = sio.loadmat('../data/training/peaksBinTrainNeg.mat')
+
+    train_seq = sio.loadmat('../data/training/peaksBinTrain')
+    train_labels = np.loadtxt('../data/training/olapLabelsTrain')
+
+    x_train_pos = train_seq['seq'][train_labels > 0]
     y_train_pos = train_labels[train_labels > 0]
 
-    x_train_neg = train_neg['seq']
+    x_train_neg = train_seq['seq'][train_labels == 0]
     y_train_neg = train_labels[train_labels == 0]
 
     peaksBinValid = sio.loadmat('../data/training/peaksBinValid.mat')
-
     x_valid = peaksBinValid['seq']
-    y_valid = np.loadtxt('../data/training/validOverlapLabels')
+    y_valid = np.loadtxt('../data/training/olapLabelsValid')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -181,11 +183,11 @@ def main(_):
     x_valid = train_data['x_valid']
     y_valid = train_data['y_valid']
 
-    batch_size = 500
+    batch_size = 50
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004], name='input')
-    y_ = tf.placeholder(tf.float32, [None, 1], name='labels')
+    y_ = tf.placeholder(tf.float32, [None, ], name='labels')
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
@@ -250,6 +252,7 @@ def main(_):
         # test_recall = tp / (tp + fn)
 
         test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        print('test error %g' % test_error)
 
         # print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
         # print('test precision %g' % test_precision)
