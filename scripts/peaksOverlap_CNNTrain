@@ -148,26 +148,31 @@ def next_training_batch(data, size):
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
-    train_pos = sio.loadmat('../data/training/peaksBinTrainPos.mat')
-    train_neg = sio.loadmat('../data/training/peaksBinTrainNeg.mat')
+    train_seq = sio.loadmat('../data/training/peaksBinTrain')
+    train_labels = np.loadtxt('../data/training/olapLabelsTrain')
 
-    x_train_pos = train_pos['seq']
-    y_train_pos = train_pos['labels']
+    x_train_pos = train_seq['seq'][train_labels > 0]
+    y_train_pos = train_labels[train_labels > 0]
 
-    x_train_neg = train_neg['seq']
-    y_train_neg = train_neg['labels']
+    x_train_neg = train_seq['seq'][train_labels == 0]
+    y_train_neg = train_labels[train_labels == 0]
 
     peaksBinValid = sio.loadmat('../data/training/peaksBinValid.mat')
     x_valid = peaksBinValid['seq']
-    y_valid = peaksBinValid['labels']
+    y_valid = np.loadtxt('../data/training/olapLabelsValid')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
     x_train_neg = np.asarray(x_train_neg.todense()).astype(int)
     x_valid = np.asarray(x_valid.todense()).astype(int)
 
-    train_data = {'x_pos': x_train_pos, 'y_pos': y_train_pos, 'x_neg': x_train_neg, 'y_neg': y_train_neg,
-                  'x_valid': x_valid, 'y_valid': y_valid}
+    train_data = {}
+    train_data['x_pos'] = x_train_pos
+    train_data['y_pos'] = y_train_pos
+    train_data['x_neg'] = x_train_neg
+    train_data['y_neg'] = y_train_neg
+    train_data['x_valid'] = x_valid
+    train_data['y_valid'] = y_valid
 
     return train_data
 
@@ -183,23 +188,14 @@ def main(_):
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004], name='input')
-    y_ = tf.placeholder(tf.float32, [None, 1], name='labels')
+    y_ = tf.placeholder(tf.float32, [None, ], name='labels')
 
     # Build the graph for the deep net
     y_conv, keep_prob = deepnn(x)
 
     # Define performance stats and optimizer
-    cross_entropy = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=y_, logits=y_conv))
-    train_step = tf.train.RMSPropOptimizer(1e-3).minimize(cross_entropy)
-
-    y_hat = tf.greater(y_conv, 0.5)
-    correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
-    accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-    preds = tf.cast(y_hat, tf.float32)
-    true_pos = tf.count_nonzero(y_ * preds)
-    false_pos = tf.count_nonzero((y_ - 1) * preds)
-    false_neg = tf.count_nonzero(y_ * (preds - 1))
+    error = tf.reduce_mean(tf.nn.l2_loss(y_ - y_conv, name='l2_loss'))
+    train_step = tf.train.RMSPropOptimizer(1e-3).minimize(error)
 
     # Save model
     saver = tf.train.Saver()
@@ -209,48 +205,30 @@ def main(_):
         sess.run(tf.local_variables_initializer())
         start = time.time()
 
-        for i in range(100):
+        for i in range(20000):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 10 == 0:
-                train_accuracy = accuracy.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
+            if i % 1000 == 0:
+                train_error = error.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
-                tp = true_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-                fp = false_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-                fn = false_neg.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
-
-                # if tp == 0 and fp == 0:
-                #     train_precision = -1
-                # else:
-                #     train_precision = tp / (tp + fp)
-                #
-                # if tp == 0 and fn == 0:
-                #     train_recall = -1
-                # else:
-                #     train_recall = tp / (tp + fn)
-
-                print('step %d, training accuracy %g, tp %g, fp %g, fn %g' %
-                      (i, train_accuracy, tp, fp, fn))
-
-                print('step %d, training error %g' % (i, train_accuracy))
+                print('step %d, training error %g' % (i, train_error))
 
             train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "models/model3")
+        saver.save(sess, "models/olapModel1")
 
-        tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
-        fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
-        fn = false_neg.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        y_hat = y_conv.eval(feed_dict={x: x_valid[:1000, :], keep_prob: 0.3})
 
-        test_precision = tp / (tp + fp)
-        test_recall = tp / (tp + fn)
-        test_accuracy = accuracy.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        # plot y_hat and y_valid
+        plt.plot(np.arange(0, 100, 1), y_hat, 'r', np.arange(0, 100, 1), y_valid[:1000], 'b')
+        plt.axis([0, 100, -2, 2])
+        plt.savefig('../olapPlot1.png')
+        plt.show()
 
-        print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
-        print('test precision %g' % test_precision)
-        print('test recall %g' % test_recall)
+        test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        print('test error %g' % test_error)
 
 
 if __name__ == '__main__':
