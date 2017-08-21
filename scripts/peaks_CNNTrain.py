@@ -9,6 +9,10 @@ import sklearn as skl
 import tensorflow as tf
 import numpy as np
 import time
+import matplotlib as mpl
+
+mpl.use('TkAgg')
+import matplotlib.pyplot as plt
 
 
 def deepnn(x):
@@ -183,7 +187,7 @@ def main(_):
     x_valid = train_data['x_valid']
     y_valid = train_data['y_valid']
 
-    batch_size = 50
+    batch_size = 100
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004], name='input')
@@ -213,9 +217,9 @@ def main(_):
         sess.run(tf.local_variables_initializer())
         start = time.time()
 
-        for i in range(1000):
+        for i in range(100):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 100 == 0:
+            if i % 10 == 0:
                 train_error = error.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
                 # tp = true_pos.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
@@ -242,7 +246,7 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "models/model3")
+        # saver.save(sess, "models/model3")
 
         # tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
         # fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
@@ -251,8 +255,15 @@ def main(_):
         # test_precision = tp / (tp + fp)
         # test_recall = tp / (tp + fn)
 
-        test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
-        print('test error %g' % test_error)
+        y_hat = y_conv.eval(feed_dict={x: x_valid[:100,:], keep_prob: 0.3})
+
+        # plot y_hat and y_valid
+        plt.plot(np.arange(0, 100, 1), y_hat, 'r', np.arange(0, 100, 1), y_valid[:100], 'b')
+        plt.axis([0, 100, 0, 1])
+        plt.show()
+
+        # test_error = error.eval(feed_dict={x: x_valid[:100,:], y_: y_valid[100], keep_prob: 0.3})
+        # print('test error %g' % test_error)
 
         # print('test accuracy %g, tp %g, fp %g, fn %g' % (test_accuracy, tp, fp, fn))
         # print('test precision %g' % test_precision)
