@@ -148,8 +148,8 @@ def next_training_batch(data, size):
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
-    train_seq = sio.loadmat('../data/training/peaksBinTrain')
-    train_labels = np.loadtxt('../data/training/olapLabelsTrain')
+    train_seq = sio.loadmat('../../data/training/peaksBinTrain.mat')
+    train_labels = np.loadtxt('../../data/training/olapLabelsTrain')
 
     x_train_pos = train_seq['seq'][train_labels > 0]
     y_train_pos = train_labels[train_labels > 0]
@@ -157,9 +157,9 @@ def import_training_data():
     x_train_neg = train_seq['seq'][train_labels == 0]
     y_train_neg = train_labels[train_labels == 0]
 
-    peaksBinValid = sio.loadmat('../data/training/peaksBinValid.mat')
+    peaksBinValid = sio.loadmat('../../data/training/peaksBinValid.mat')
     x_valid = peaksBinValid['seq']
-    y_valid = np.loadtxt('../data/training/olapLabelsValid')
+    y_valid = np.loadtxt('../../data/training/olapLabelsValid')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -227,7 +227,7 @@ def main(_):
         plt.savefig('../olapPlot1.png')
         plt.show()
 
-        test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
         print('test error %g' % test_error)
 
 

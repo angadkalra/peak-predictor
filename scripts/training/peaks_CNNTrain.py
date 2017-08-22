@@ -9,10 +9,6 @@ import sklearn as skl
 import tensorflow as tf
 import numpy as np
 import time
-import matplotlib as mpl
-
-mpl.use('TkAgg')
-import matplotlib.pyplot as plt
 
 
 def deepnn(x):
@@ -148,8 +144,8 @@ def next_training_batch(data, size):
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
-    train_pos = sio.loadmat('../data/training/peaksBinTrainPos.mat')
-    train_neg = sio.loadmat('../data/training/peaksBinTrainNeg.mat')
+    train_pos = sio.loadmat('../../data/training/peaksBinTrainPos.mat')
+    train_neg = sio.loadmat('../../data/training/peaksBinTrainNeg.mat')
 
     x_train_pos = train_pos['seq']
     y_train_pos = train_pos['labels']
@@ -157,7 +153,7 @@ def import_training_data():
     x_train_neg = train_neg['seq']
     y_train_neg = train_neg['labels']
 
-    peaksBinValid = sio.loadmat('../data/training/peaksBinValid.mat')
+    peaksBinValid = sio.loadmat('../../data/training/peaksBinValid.mat')
     x_valid = peaksBinValid['seq']
     y_valid = peaksBinValid['labels']
 
