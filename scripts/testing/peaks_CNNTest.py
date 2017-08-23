@@ -141,8 +141,7 @@ def main(_):
     test_labels = peaksBinTest['labels']
 
     # Define accuracy prediction
-    y_conv = deepnn(test_seq[2500:3500, :], session=sess)
-
+    y_conv = graph.get_tensor_by_name('y_conv')
     y_hat = tf.greater(y_conv, 0.5)
     correct_prediction = tf.equal(y_hat, tf.equal(y_, 1))
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))

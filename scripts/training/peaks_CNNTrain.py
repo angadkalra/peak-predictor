@@ -83,7 +83,8 @@ def deepnn(x):
     W_fc3 = weight_variable([1000, 1], 'W_fc3')
     b_fc3 = bias_variable([1], 'b_fc3')
 
-    y_conv = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
+    y_conv = tf.add(tf.matmul(h_fc2_drop, W_fc3), b_fc3, name='y_conv')
+
     return y_conv, keep_prob
 
 
@@ -144,18 +145,26 @@ def next_training_batch(data, size):
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
-    train_pos = sio.loadmat('../../data/training/peaksBinTrainPos.mat')
-    train_neg = sio.loadmat('../../data/training/peaksBinTrainNeg.mat')
+    # Training
+    train_data = sio.loadmat('../data/training/peaksBinTrain.mat')
 
-    x_train_pos = train_pos['seq']
-    y_train_pos = train_pos['labels']
+    train_data_seq = train_data['seq']
+    train_data_labels = train_data['labels']
 
-    x_train_neg = train_neg['seq']
-    y_train_neg = train_neg['labels']
+    pos_labels = (train_data_labels[:, 0] == 1)
+    neg_labels = (train_data_labels[:, 0] == 0)
 
-    peaksBinValid = sio.loadmat('../../data/training/peaksBinValid.mat')
-    x_valid = peaksBinValid['seq']
-    y_valid = peaksBinValid['labels']
+    x_train_pos = train_data_seq[pos_labels, :]
+    y_train_pos = train_data_labels[pos_labels, :]
+
+    x_train_neg = train_data_seq[neg_labels, :]
+    y_train_neg = train_data_labels[neg_labels, :]
+
+    # Validation
+    valid_data = sio.loadmat('../data/training/peaksBinTrain.mat')
+
+    x_valid = valid_data['seq']
+    y_valid = valid_data['labels']
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -234,7 +243,7 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "models/model3")
+        saver.save(sess, "models/tempModel")
 
         tp = true_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
         fp = false_pos.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})

@@ -87,7 +87,8 @@ def deepnn(x):
     W_fc3 = weight_variable([1000, 1], 'W_fc3')
     b_fc3 = bias_variable([1], 'b_fc3')
 
-    y_conv = tf.matmul(h_fc2_drop, W_fc3, name='y_conv') + b_fc3
+    y_conv = tf.add(tf.matmul(h_fc2_drop, W_fc3), b_fc3, name="y_conv")
+
     return y_conv, keep_prob
 
 
@@ -148,18 +149,23 @@ def next_training_batch(data, size):
 def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
-    train_seq = sio.loadmat('../../data/training/peaksBinTrain.mat')
-    train_labels = np.loadtxt('../../data/training/olapLabelsTrain')
+    # Training
+    train_data = sio.loadmat('../data/training/peaksBinTrain.mat')
+    train_labels = np.loadtxt('../data/training/olapLabelsTrain')
 
-    x_train_pos = train_seq['seq'][train_labels > 0]
+    train_data_seq = train_data['seq']
+
+    x_train_pos = train_data_seq[train_labels > 0, :]
     y_train_pos = train_labels[train_labels > 0]
 
-    x_train_neg = train_seq['seq'][train_labels == 0]
+    x_train_neg = train_data_seq[train_labels == 0, :]
     y_train_neg = train_labels[train_labels == 0]
 
-    peaksBinValid = sio.loadmat('../../data/training/peaksBinValid.mat')
-    x_valid = peaksBinValid['seq']
-    y_valid = np.loadtxt('../../data/training/olapLabelsValid')
+    # Validation
+    valid_data = sio.loadmat('../data/training/peaksBinTrain.mat')
+
+    x_valid = valid_data['seq']
+    y_valid = np.loadtxt('../data/training/olapLabelsValid')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -205,9 +211,9 @@ def main(_):
         sess.run(tf.local_variables_initializer())
         start = time.time()
 
-        for i in range(100):
+        for i in range(20000):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 10 == 0:
+            if i % 1000 == 0:
                 train_error = error.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
                 print('step %d, training error %g' % (i, train_error))
@@ -217,18 +223,18 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "../../models/tempModel")
+        saver.save(sess, "../models/olapModel1")
 
         y_hat = y_conv.eval(feed_dict={x: x_valid[:100, :], keep_prob: 0.3})
 
         # plot y_hat and y_valid
         plt.plot(np.arange(0, 100, 1), y_hat, 'r', np.arange(0, 100, 1), y_valid[:100], 'b')
         plt.axis([0, 100, -2, 2])
-        plt.savefig('olapPlot.png')
+        plt.savefig('olapPlot1.png')
         plt.show()
 
-        # test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
-        # print('test error %g' % test_error)
+        test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        print('test error %g' % test_error)
 
 
 if __name__ == '__main__':
