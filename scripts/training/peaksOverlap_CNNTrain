@@ -184,7 +184,7 @@ def main(_):
     x_valid = train_data['x_valid']
     y_valid = train_data['y_valid']
 
-    batch_size = 100
+    batch_size = 50
 
     # Create the model
     x = tf.placeholder(tf.float32, [None, 1004], name='input')
@@ -224,11 +224,11 @@ def main(_):
         # plot y_hat and y_valid
         plt.plot(np.arange(0, 100, 1), y_hat, 'r', np.arange(0, 100, 1), y_valid[:100], 'b')
         plt.axis([0, 100, -2, 2])
-        plt.savefig('../olapPlot1.png')
+        plt.savefig('olapPlot.png')
         plt.show()
 
-        test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
-        print('test error %g' % test_error)
+        # test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
+        # print('test error %g' % test_error)
 
 
 if __name__ == '__main__':

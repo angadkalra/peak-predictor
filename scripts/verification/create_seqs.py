@@ -17,12 +17,12 @@ with open('../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac
 # Read the sequences from each .fa file using the ranges in the atacSeqs dict, then write those sequences to a txt file
 # with one sequence per line.
 
-output = open('../data/seqsVerify.txt', 'w+')
+output = open('../../data/seqsVerify.txt', 'w+')
 
-for file in os.listdir('../data/mm10'):
+for file in os.listdir('../../data/mm10'):
     if file.endswith('.fa'):
 
-        with open('../data/mm10/' + file) as fn:
+        with open('../../data/mm10/' + file) as fn:
             filename = file[: -3]   # remove .fa extension
             ranges = atacSeqs[filename]
 
