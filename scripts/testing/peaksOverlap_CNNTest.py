@@ -36,19 +36,19 @@ def main(_):
     test_labels = np.loadtxt('../../data/testing/olapLabelsTest')
 
     # Define prediction error and plot results
-    y_conv = graph.get_tensor_by_name('y_conv')
+    y_conv = graph.get_operation_by_name('y_conv')
+    y_conv = y_conv.values()[0]
+
     y_hat = y_conv.eval(session=sess, feed_dict={x: test_seq[:100, :], keep_prob: 0.3})
 
     # plot y_hat and y_valid
-    plt.plot(np.arange(0, 100, 1), y_hat, 'r', np.arange(0, 100, 1), test_labels[:100], 'b')
-    plt.axis([0, 100, -2, 2])
-    plt.savefig('olapPlotTest1.png')
+    plt.plot(y_hat, 'r', test_labels[:100], 'b')
     plt.show()
 
     error = graph.get_operation_by_name('l2_loss')
     error = error.values()[0]
 
-    test_error = error.eval(session=sess, feed_dict={x: test_seq[:100, :], y_: test_labels[:100], keep_prob: 0.3})
+    test_error = error.eval(session=sess, feed_dict={x: test_seq[:100], y_: test_labels[:100], keep_prob: 0.3})
 
     print('test error %g' % test_error)
 
