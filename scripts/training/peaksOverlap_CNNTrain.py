@@ -26,9 +26,9 @@ def deepnn(x):
 
     scale1 = tf.Variable(tf.ones([300]), name='scale1')
     offset1 = tf.Variable(tf.zeros([300]), name='offset1')
-    z1 = batch_normalization(conv_layer, scale1, offset1, 1e-3)
+    z1 = batch_normalization(conv_layer + b_conv1, scale1, offset1, 1e-3)
 
-    h_conv1 = tf.nn.relu(z1 + b_conv1, name='h_conv1')
+    h_conv1 = tf.nn.relu(z1, name='h_conv1')
 
     # Pooling layer
     h_pool1 = max_pool(h_conv1, 2, 3, 'h_pool1')
@@ -40,9 +40,9 @@ def deepnn(x):
 
     scale2 = tf.Variable(tf.ones([200]), name='scale2')
     offset2 = tf.Variable(tf.zeros([200]), name='offset2')
-    z2 = batch_normalization(conv_layer, scale2, offset2, 1e-3)
+    z2 = batch_normalization(conv_layer + b_conv2, scale2, offset2, 1e-3)
 
-    h_conv2 = tf.nn.relu(z2 + b_conv2, 'h_conv2')
+    h_conv2 = tf.nn.relu(z2, 'h_conv2')
 
     # Second pooling layer.
     h_pool2 = max_pool(h_conv2, 2, 4, 'h_pool2')
@@ -54,9 +54,9 @@ def deepnn(x):
 
     scale3 = tf.Variable(tf.ones([200]), name='scale3')
     offset3 = tf.Variable(tf.zeros([200]), name='offset3')
-    z3 = batch_normalization(conv_layer, scale3, offset3, 1e-3)
+    z3 = batch_normalization(conv_layer + b_conv3, scale3, offset3, 1e-3)
 
-    h_conv3 = tf.nn.relu(z3 + b_conv3, 'h_conv3')
+    h_conv3 = tf.nn.relu(z3, 'h_conv3')
 
     # Third pooling layer
     h_pool3 = max_pool(h_conv3, 1, 4, 'h_pool3')
@@ -87,7 +87,8 @@ def deepnn(x):
     W_fc3 = weight_variable([1000, 1], 'W_fc3')
     b_fc3 = bias_variable([1], 'b_fc3')
 
-    y_conv = tf.add(tf.matmul(h_fc2_drop, W_fc3), b_fc3, name="y_conv")
+    output = tf.add(tf.matmul(h_fc2_drop, W_fc3), b_fc3, name="output")
+    y_conv = tf.sigmoid(output, name='y_conv')
 
     return y_conv, keep_prob
 
@@ -150,8 +151,8 @@ def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
     # Training
-    train_data = sio.loadmat('../data/training/peaksBinTrain.mat')
-    train_labels = np.loadtxt('../data/training/olapLabelsTrain')
+    train_data = sio.loadmat('../../data/training/peaksBinTrain.mat')
+    train_labels = np.loadtxt('../../data/training/olapLabelsTrain')
 
     train_data_seq = train_data['seq']
 
@@ -162,10 +163,10 @@ def import_training_data():
     y_train_neg = train_labels[train_labels == 0]
 
     # Validation
-    valid_data = sio.loadmat('../data/training/peaksBinTrain.mat')
+    valid_data = sio.loadmat('../../data/training/peaksBinTrain.mat')
 
     x_valid = valid_data['seq']
-    y_valid = np.loadtxt('../data/training/olapLabelsValid')
+    y_valid = np.loadtxt('../../data/training/olapLabelsValid')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -211,9 +212,9 @@ def main(_):
         sess.run(tf.local_variables_initializer())
         start = time.time()
 
-        for i in range(20000):
+        for i in range(100):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 1000 == 0:
+            if i % 10 == 0:
                 train_error = error.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
                 print('step %d, training error %g' % (i, train_error))
@@ -223,9 +224,9 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "../models/olapModel2")
+        saver.save(sess, "../models/tempModel")
 
-        test_error = error.eval(feed_dict={x: x_valid, y_: y_valid, keep_prob: 0.3})
+        test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
         print('test error %g' % test_error)
 
 
