@@ -66,7 +66,14 @@ def deepnn(x):
     b_fc1 = bias_variable([1000], 'b_fc1')
 
     h_pool3_flat = tf.reshape(h_pool3, [-1, 6*200])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool3_flat, W_fc1) + b_fc1, name='h_fc1')
+    o_fc1 = tf.matmul(h_pool3_flat, W_fc1) + b_fc1
+
+    scale_4 = tf.Variable(tf.ones([1000]), name='scale4')
+    offset_4 = tf.zeros([1000], name='offset4')
+    mean_fc1, var_fc1 = tf.nn.moments(o_fc1, [0])
+    z_fc1 = tf.nn.batch_normalization(o_fc1, mean_fc1, var_fc1, scale_4, offset_4, 1e-3)
+
+    h_fc1 = tf.nn.relu(z_fc1, name='h_fc1')
 
     # Dropout1 - controls the complexity of the model, prevents co-adaptation of
     # features.
@@ -76,8 +83,14 @@ def deepnn(x):
     # Fully connected layer 2
     W_fc2 = weight_variable([1000, 1000], 'W_fc2')
     b_fc2 = bias_variable([1000], 'b_fc2')
+    o_fc2 = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
-    h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2, name='h_fc2')
+    mean_fc2, var_fc2 = tf.nn.moments(o_fc2, [0])
+    scale_5 = tf.Variable(tf.ones([1000]), name='scale5')
+    offset_5 = tf.Variable(tf.zeros([1000]), name='offset5')
+    z_fc2 = tf.nn.batch_normalization(o_fc2, mean_fc2, var_fc2, scale_5, offset_5, 1e-3)
+
+    h_fc2 = tf.nn.relu(z_fc2, name='h_fc2')
 
     # Dropout2 - controls the complexity of the model, prevents co-adaptation of
     # features.
@@ -86,9 +99,14 @@ def deepnn(x):
     # Map the remaining features to 1 class
     W_fc3 = weight_variable([1000, 1], 'W_fc3')
     b_fc3 = bias_variable([1], 'b_fc3')
+    output = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
 
-    output = tf.add(tf.matmul(h_fc2_drop, W_fc3), b_fc3, name="output")
-    y_conv = tf.sigmoid(output, name='y_conv')
+    mean_output, var_output = tf.nn.moments(output, [0])
+    scale_6 = tf.Variable(tf.ones([1]), name='scale6')
+    offset_6 = tf.Variable(tf.zeros([1]), name='offset6')
+    z_output = tf.nn.batch_normalization(output, mean_output, var_output, scale_6, offset_6, 1e-3)
+
+    y_conv = tf.sigmoid(z_output, name='y_conv')
 
     return y_conv, keep_prob
 
@@ -224,7 +242,7 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "../models/olapModel2")
+        saver.save(sess, "../models/olapModel3")
 
         # test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
         # print('test error %g' % test_error)
