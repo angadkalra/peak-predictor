@@ -151,8 +151,8 @@ def import_training_data():
     """loads training and validation files and extracts training and validation sets"""
 
     # Training
-    train_data = sio.loadmat('../../data/training/peaksBinTrain.mat')
-    train_labels = np.loadtxt('../../data/training/olapLabelsTrain')
+    train_data = sio.loadmat('../data/training/peaksBinTrain.mat')
+    train_labels = np.loadtxt('../data/training/olapLabelsTrain')
 
     train_data_seq = train_data['seq']
 
@@ -163,10 +163,10 @@ def import_training_data():
     y_train_neg = train_labels[train_labels == 0]
 
     # Validation
-    valid_data = sio.loadmat('../../data/training/peaksBinTrain.mat')
+    valid_data = sio.loadmat('../data/training/peaksBinTrain.mat')
 
     x_valid = valid_data['seq']
-    y_valid = np.loadtxt('../../data/training/olapLabelsValid')
+    y_valid = np.loadtxt('../data/training/olapLabelsValid')
 
     # Want dense numpy ndarray
     x_train_pos = np.asarray(x_train_pos.todense()).astype(int)
@@ -212,9 +212,9 @@ def main(_):
         sess.run(tf.local_variables_initializer())
         start = time.time()
 
-        for i in range(100):
+        for i in range(20000):
             batch = next_training_batch(train_data,  batch_size)
-            if i % 10 == 0:
+            if i % 100 == 0:
                 train_error = error.eval(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.3})
 
                 print('step %d, training error %g' % (i, train_error))
@@ -224,10 +224,10 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "../models/tempModel")
+        saver.save(sess, "../models/olapModel2")
 
-        test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
-        print('test error %g' % test_error)
+        # test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
+        # print('test error %g' % test_error)
 
 
 if __name__ == '__main__':
