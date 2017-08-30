@@ -71,7 +71,7 @@ def deepnn(x):
     scale_4 = tf.Variable(tf.ones([1000]), name='scale4')
     offset_4 = tf.zeros([1000], name='offset4')
     mean_fc1, var_fc1 = tf.nn.moments(o_fc1, [0])
-    z_fc1 = tf.nn.batch_normalization(o_fc1, mean_fc1, var_fc1, scale_4, offset_4, 1e-3)
+    z_fc1 = tf.nn.batch_normalization(o_fc1, mean_fc1, var_fc1, scale_4, offset_4, 1e-3, name='bn_fc1')
 
     h_fc1 = tf.nn.relu(z_fc1, name='h_fc1')
 
@@ -88,7 +88,7 @@ def deepnn(x):
     mean_fc2, var_fc2 = tf.nn.moments(o_fc2, [0])
     scale_5 = tf.Variable(tf.ones([1000]), name='scale5')
     offset_5 = tf.Variable(tf.zeros([1000]), name='offset5')
-    z_fc2 = tf.nn.batch_normalization(o_fc2, mean_fc2, var_fc2, scale_5, offset_5, 1e-3)
+    z_fc2 = tf.nn.batch_normalization(o_fc2, mean_fc2, var_fc2, scale_5, offset_5, 1e-3, name='bn_fc2')
 
     h_fc2 = tf.nn.relu(z_fc2, name='h_fc2')
 
@@ -99,12 +99,12 @@ def deepnn(x):
     # Map the remaining features to 1 class
     W_fc3 = weight_variable([1000, 1], 'W_fc3')
     b_fc3 = bias_variable([1], 'b_fc3')
-    output = tf.matmul(h_fc2_drop, W_fc3) + b_fc3
+    output = tf.add(tf.matmul(h_fc2_drop, W_fc3), b_fc3, name='output')
 
     mean_output, var_output = tf.nn.moments(output, [0])
     scale_6 = tf.Variable(tf.ones([1]), name='scale6')
     offset_6 = tf.Variable(tf.zeros([1]), name='offset6')
-    z_output = tf.nn.batch_normalization(output, mean_output, var_output, scale_6, offset_6, 1e-3)
+    z_output = tf.nn.batch_normalization(output, mean_output, var_output, scale_6, offset_6, 1e-3, name='bn_fc3')
 
     y_conv = tf.sigmoid(z_output, name='y_conv')
 
@@ -242,7 +242,7 @@ def main(_):
         end = time.time()
         print('Training time %g seconds' % (end - start))
 
-        saver.save(sess, "../models/olapModel3")
+        saver.save(sess, "../models/olapModel4")
 
         # test_error = error.eval(feed_dict={x: x_valid[:100, :], y_: y_valid[:100], keep_prob: 0.3})
         # print('test error %g' % test_error)
