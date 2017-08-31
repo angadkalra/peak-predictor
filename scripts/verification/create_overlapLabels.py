@@ -5,8 +5,9 @@ import numpy as np
 foxp3Seqs = {}
 atacSeqs = {}
 labels = np.zeros(63197, np.float)
+pkNames = np.zeros(63197, np.str)
 
-with open('../data/original/Foxp3.ChIPseq.csv') as foxp3:
+with open('../../data/original/Foxp3.ChIPseq.csv') as foxp3:
     reader = csv.reader(foxp3, delimiter=',')
     next(reader)    # skip column headers
 
@@ -16,7 +17,7 @@ with open('../data/original/Foxp3.ChIPseq.csv') as foxp3:
         else:
             foxp3Seqs[row[0]] = [(row[1], row[2])]
 
-with open('../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
+with open('../../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
     reader = csv.reader(atac, delimiter=',')
     next(reader)    # skip column headers
 
@@ -47,7 +48,13 @@ for chrm, rangeList in foxp3Seqs.items():
 
                     labels[peakNum - 1] = labels[peakNum - 1] + overlap/251
 
+                pkNames[peakNum - 1] = peakLabel
+
 labels = np.delete(labels, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
                                            np.arange(61379, 61422), np.arange(63178, 63187))))
 
-labels.tofile('../data/overlapLabels', '\n')
+pkNames = np.delete(pkNames, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
+                                                np.arange(61379, 61422), np.arange(63178, 63187))))
+
+labels.tofile('../../data/overlapLabels', '\n')
+pkNames.tofile('../../data/pkNames', '\n')

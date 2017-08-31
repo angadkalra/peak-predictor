@@ -1,2 +1,2 @@
-model_checkpoint_path: "olapModel4"
-all_model_checkpoint_paths: "olapModel4"
+model_checkpoint_path: "olapModel5_NoBN"
+all_model_checkpoint_paths: "olapModel5_NoBN"
