@@ -48,13 +48,17 @@ for chrm, rangeList in foxp3Seqs.items():
 
                     labels[peakNum - 1] = labels[peakNum - 1] + overlap/251
 
-                pkNames[peakNum - 1] = peakNum
+for key, value in atacSeqs.items():
+    for tple in value:
+        name = tple[2]
+        idx = int(name[5:])
+        pkNames[idx - 1] = idx
 
-labels = np.delete(labels, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
-                                           np.arange(61379, 61422), np.arange(63178, 63187))))
+labels = np.delete(labels, np.concatenate(([4296, 23346, 26925, 35323], np.arange(44511, 44515),
+                                           np.arange(61378, 61421), np.arange(63177, 63186))))
 
-pkNames = np.delete(pkNames, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
-                                                np.arange(61379, 61422), np.arange(63178, 63187))))
+pkNames = np.delete(pkNames, np.concatenate(([4296, 23346, 26925, 35323], np.arange(44511, 44515),
+                                                np.arange(61378, 61421), np.arange(63177, 63186))))
 
 labels.tofile('../../data/overlapLabels', '\n')
 pkNames.tofile('../../data/pkNames', '\n')

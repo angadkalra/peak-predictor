@@ -6,7 +6,7 @@ foxp3Seqs = {}
 atacSeqs = {}
 labels = np.zeros(63197, np.float)
 
-with open('../data/original/Foxp3.ChIPseq.csv') as foxp3:
+with open('../../data/original/Foxp3.ChIPseq.csv') as foxp3:
     reader = csv.reader(foxp3, delimiter=',')
     next(reader)    # skip column headers
 
@@ -16,7 +16,7 @@ with open('../data/original/Foxp3.ChIPseq.csv') as foxp3:
         else:
             foxp3Seqs[row[0]] = [(row[1], row[2])]
 
-with open('../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
+with open('../../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac:
     reader = csv.reader(atac, delimiter=',')
     next(reader)    # skip column headers
 
@@ -30,7 +30,7 @@ with open('../data/original/dpz.SplTreg.ATAC.density_GCandquantile.csv') as atac
         i = i + 1
 
 
-posPks = open('../data/posPksVerify', 'w+')
+posPks = open('../../data/posPksVerify', 'w+')
 
 for chrm, rangeList in foxp3Seqs.items():
 
@@ -50,7 +50,7 @@ for chrm, rangeList in foxp3Seqs.items():
 
 posPks.close()
 
-labels = np.delete(labels, np.concatenate(([4296, 23345, 26923, 35320], np.arange(44512, 44516),
-                                           np.arange(61379, 61422), np.arange(63178, 63187))))
+labels = np.delete(labels, np.concatenate(([4296, 23346, 26925, 35323], np.arange(44511, 44515),
+                                           np.arange(61378, 61421), np.arange(63177, 63186))))
 
-labels.tofile('../data/labelsVerify', '\n')
+labels.tofile('../../data/labelsVerify', '\n')

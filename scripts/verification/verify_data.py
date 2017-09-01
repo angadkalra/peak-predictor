@@ -3,11 +3,11 @@ import scipy.io as sio
 
 # Extract posPks from matlab file
 
-org_data = sio.loadmat('../data/original/peaksATGC.mat')
+org_data = sio.loadmat('../../data/original/peaksATGC.mat')
 pkNames = org_data['pkName']
 org_labels = org_data['labels']
 
-labelsVerify = np.loadtxt('../data/labelsVerify')
+labelsVerify = np.loadtxt('../../data/labelsVerify')
 
 indices = org_labels.astype(np.bool)
 
